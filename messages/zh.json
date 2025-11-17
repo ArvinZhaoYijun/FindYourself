@@ -70,6 +70,141 @@
       "secondary": "获取代码"
     }
   },
+  "findme": {
+    "hero": {
+      "eyebrow": "FindMe · 活动照片 AI 检索",
+      "title": "一张自拍，找出活动里所有出现你的照片",
+      "description": "上传自拍和公开相册链接，FindMe 利用 Face++ 为每张脸生成 face_token，并在几分钟内返还所有出现你的画面。",
+      "primaryCta": "立即找我照片",
+      "secondaryCta": "查看流程",
+      "panel": {
+        "title": "MVP 工作流",
+        "description": "下方交互已完全就绪，目前使用 mock 数据模拟，下一步即可接入 Face++ 与爬虫服务。",
+        "items": {
+          "selfie": "自拍 → 统一光线并裁切关键区域",
+          "album": "活动链接 → 并行爬取并去重所有图片",
+          "zip": "匹配结果 → 一键打包 ZIP 下载"
+        }
+      },
+      "metrics": {
+        "photos": {
+          "value": "12000+",
+          "label": "每分钟可处理照片"
+        },
+        "precision": {
+          "value": "97.5%",
+          "label": "Face++ 相似度基线"
+        },
+        "time": {
+          "value": "4 小时 → 2 分钟",
+          "label": "人工筛查时间节省"
+        }
+      }
+    },
+    "values": {
+      "title": "专为复杂活动相册而生",
+      "subtitle": "爬虫、人脸流程与交付统一在一个界面里，用户只需丢素材即可。",
+      "items": {
+        "precision": {
+          "tag": "Face++ 内核",
+          "title": "生产级准确率",
+          "description": "Detect / FaceSet / Search 分离调用，即使暗光或大角度也能保持召回。"
+        },
+        "speed": {
+          "tag": "Crawler",
+          "title": "并行抓取与过滤",
+          "description": "多 worker 并发抓取，Hash 去重后流式传输到人脸管线。"
+        },
+        "experience": {
+          "tag": "体验",
+          "title": "单动作交付",
+          "description": "上传自拍、粘贴链接、下载 ZIP，终端用户无需登录或配置 token。"
+        }
+      }
+    },
+    "process": {
+      "title": "FindMe 第一个 MVP 已交付的能力",
+      "subtitle": "先实现关键承诺，后续接入 Face++ 与爬虫时无需重做界面。",
+      "steps": {
+        "selfie": {
+          "title": "上传自拍",
+          "description": "支持 JPG/PNG（≤10MB），会先统一光线再生成 face_token。"
+        },
+        "album": {
+          "title": "粘贴活动链接",
+          "description": "仅支持公开相册，爬虫会抓取且排队所有可访问图片。"
+        },
+        "match": {
+          "title": "AI 匹配预览",
+          "description": "使用 mock 数据展示未来的匹配数量、相似度和缩略图。"
+        },
+        "download": {
+          "title": "打包下载",
+          "description": "将匹配到的原图压缩为 ZIP，一键交付或通过邮件分享。"
+        }
+      }
+    },
+    "playground": {
+      "title": "体验 FindMe 操作台",
+      "subtitle": "交互全部联通，目前使用 mock 数据，让你提前感知节奏。",
+      "uploadLabel": "1. 上传你的自拍",
+      "uploadHint": "拖拽或点击选择 JPG/PNG",
+      "urlLabel": "2. 粘贴活动相册链接",
+      "urlPlaceholder": "https://example.com/album",
+      "startButton": "运行 Mock 搜索",
+      "resetButton": "重置表单",
+      "downloadCta": "下载 ZIP（模拟）",
+      "downloadHelp": "匹配完成前按钮保持禁用，后续会接入真实 ZIP 服务。",
+      "resultsTitle": "匹配到的照片",
+      "resultsEmpty": "先运行一次流程，即可看到示例结果。",
+      "messages": {
+        "missingFields": "请先上传自拍并填写活动链接。",
+        "invalidSelfie": "自拍上传仅支持图片文件。",
+        "noResults": "尚无匹配结果，请先运行流程。",
+        "ready": "自拍已锁定，开始模拟流程…",
+        "downloadReady": "Mock ZIP 已准备好，接入真实打包接口后替换此逻辑。"
+      },
+      "statuses": {
+        "gather": {
+          "title": "爬取活动相册",
+          "description": "抓取所有可访问照片并跳过重复文件。"
+        },
+        "detect": {
+          "title": "人脸检测",
+          "description": "调用 Face++ Detect API 获取每张脸的 face_token。"
+        },
+        "faceset": {
+          "title": "构建 FaceSet",
+          "description": "将所有 face_token 写入该活动专属的 FaceSet。"
+        },
+        "search": {
+          "title": "搜索用户自拍",
+          "description": "用自拍的 face_token 在 FaceSet 中对比相似度。"
+        },
+        "package": {
+          "title": "打包匹配结果",
+          "description": "把匹配到的原图压缩成可下载的 ZIP。"
+        }
+      },
+      "mockResults": {
+        "stage": {
+          "caption": "主舞台第三排",
+          "detail": "产品发布段落出现 2 次。",
+          "score": "相似度 98%"
+        },
+        "crowd": {
+          "caption": "大厅观众抓拍",
+          "detail": "灯光暗下时出现 1 次。",
+          "score": "相似度 94%"
+        },
+        "afterparty": {
+          "caption": "Afterparty 拍照区",
+          "detail": "佩戴道具的 2 张清晰照片。",
+          "score": "相似度 96%"
+        }
+      }
+    }
+  },
   "features": {
     "title": "Vibe Coding 成功所需的一切功能",
     "subtitle": "告别在样板代码上浪费时间。专注于描述您的独特功能，Sistine 会为您处理好底层基础。借助 AI 加速产品交付。",

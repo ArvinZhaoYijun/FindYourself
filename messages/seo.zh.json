@@ -1,7 +1,7 @@
 {
   "home": {
-    "title": "Sistine AI - 通过 Vibe Coding 将您的 AI SaaS 产品投入生产",
-    "description": "Sistine AI 是一个提供广泛 AI 工具和服务的平台,帮助您掌控业务。生成图像、文本以及启动业务所需的一切。",
+    "title": "FindMe - 活动照片 AI 检索",
+    "description": "FindMe 支持上传自拍并粘贴公开活动相册链接,系统会爬取相册、调用 Face++ 搜索并返回所有出现用户的照片。",
     "ogImage": "https://ai-saas-template-aceternity.vercel.app/banner.png"
   },
   "pricing": {

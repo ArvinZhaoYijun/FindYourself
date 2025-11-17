@@ -70,6 +70,141 @@
       "secondary": "Get Code"
     }
   },
+  "findme": {
+    "hero": {
+      "eyebrow": "FINDME • AI PHOTO RETRIEVAL",
+      "title": "Locate yourself inside thousands of event photos with one selfie.",
+      "description": "FindMe ingests a single selfie and any public gallery URL, fingerprints every face with Face++ tokens, and hands back every frame where you appear.",
+      "primaryCta": "Find my photos",
+      "secondaryCta": "View workflow",
+      "panel": {
+        "title": "MVP workflow",
+        "description": "The interface below mirrors the production handoff. APIs are mocked today and will connect to Face++ and the crawler next.",
+        "items": {
+          "selfie": "Selfie → normalize lighting & crop",
+          "album": "Album URL → crawl + deduplicate assets",
+          "zip": "Match set → stream ZIP download"
+        }
+      },
+      "metrics": {
+        "photos": {
+          "value": "12k+",
+          "label": "photos triaged per minute"
+        },
+        "precision": {
+          "value": "97.5%",
+          "label": "Face++ similarity baseline"
+        },
+        "time": {
+          "value": "4h → 2m",
+          "label": "manual review saved"
+        }
+      }
+    },
+    "values": {
+      "title": "Built for chaotic event archives",
+      "subtitle": "Crawler, face pipeline, and delivery live in one opinionated surface so users can just drop assets and go.",
+      "items": {
+        "precision": {
+          "tag": "Face++ core",
+          "title": "Production-grade accuracy",
+          "description": "Separate detect, FaceSet, and search calls keep recall high even when lighting is harsh or faces are angled."
+        },
+        "speed": {
+          "tag": "Crawler",
+          "title": "Parallel crawling & filtering",
+          "description": "URL workers fetch in parallel, deduplicate hashes, and stream files for the face pipeline within seconds."
+        },
+        "experience": {
+          "tag": "UX",
+          "title": "Single action delivery",
+          "description": "The UI keeps steps minimal: upload selfie, paste album URL, download curated ZIP. No dashboards or tokens for the end user."
+        }
+      }
+    },
+    "process": {
+      "title": "What ships in the first FindMe MVP",
+      "subtitle": "We focus on the critical promises now and swap the mock layer for Face++ once back-end modules land.",
+      "steps": {
+        "selfie": {
+          "title": "Upload selfie",
+          "description": "Accepts JPG/PNG up to 10MB and standardizes lighting before generating a face_token."
+        },
+        "album": {
+          "title": "Paste album URL",
+          "description": "Public galleries only. The crawler queues every reachable image for processing."
+        },
+        "match": {
+          "title": "AI match preview",
+          "description": "Mock search shows how we will surface hit counts, similarity, and thumbnails."
+        },
+        "download": {
+          "title": "One-click ZIP",
+          "description": "Package matched assets and ship a download link or email handoff."
+        }
+      }
+    },
+    "playground": {
+      "title": "Preview the FindMe console",
+      "subtitle": "All interactions are wired. API calls are mocked so you can feel the flow before integrations land.",
+      "uploadLabel": "1. Upload your selfie",
+      "uploadHint": "Drag a JPG/PNG or click to select",
+      "urlLabel": "2. Paste the event album URL",
+      "urlPlaceholder": "https://example.com/album",
+      "startButton": "Run mock search",
+      "resetButton": "Reset form",
+      "downloadCta": "Download ZIP (mock)",
+      "downloadHelp": "The button unlocks once matches are ready. Replace this stub when the ZIP service ships.",
+      "resultsTitle": "Matched photos",
+      "resultsEmpty": "Run the mock workflow to preview matches.",
+      "messages": {
+        "missingFields": "Please upload a selfie and paste the album URL before running FindMe.",
+        "invalidSelfie": "Only image files are supported for the selfie upload.",
+        "noResults": "No matches yet. Run the workflow first.",
+        "ready": "Selfie locked in. Running the FindMe mock now…",
+        "downloadReady": "Mock ZIP prepared. Hook this CTA to the real packaging API later."
+      },
+      "statuses": {
+        "gather": {
+          "title": "Crawling gallery",
+          "description": "Fetching every reachable photo and skipping duplicates."
+        },
+        "detect": {
+          "title": "Detecting faces",
+          "description": "Face++ detect API extracts tokens for every person."
+        },
+        "faceset": {
+          "title": "Building FaceSet",
+          "description": "Adding tokens into a dedicated FaceSet for the event."
+        },
+        "search": {
+          "title": "Searching your selfie",
+          "description": "Comparing your selfie token against the FaceSet."
+        },
+        "package": {
+          "title": "Packaging matches",
+          "description": "Bundling matched photos into a downloadable ZIP."
+        }
+      },
+      "mockResults": {
+        "stage": {
+          "caption": "Keynote stage, row three",
+          "detail": "Face detected twice during the product launch sequence.",
+          "score": "Similarity 98%"
+        },
+        "crowd": {
+          "caption": "Audience candids near lobby",
+          "detail": "One appearance at 19:42 when lights dimmed.",
+          "score": "Similarity 94%"
+        },
+        "afterparty": {
+          "caption": "Afterparty photo booth",
+          "detail": "Two clear frames with props detected.",
+          "score": "Similarity 96%"
+        }
+      }
+    }
+  },
   "features": {
     "title": "Everything You Need for Vibe Coding Success",
     "subtitle": "Stop wasting time on boilerplate. Focus on describing your unique features while Sistine handles the foundation. Ship faster with AI.",

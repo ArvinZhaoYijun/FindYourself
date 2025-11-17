@@ -1,7 +1,7 @@
 {
   "home": {
-    "title": "Sistine AI - Vibe Code Your AI SaaS to Production",
-    "description": "Sistine AI is a platform that provides a wide range of AI tools and services to help you stay on top of your business. Generate images, text and everything else that you need to get your business off the ground.",
+    "title": "FindMe - AI selfie matcher for event photography",
+    "description": "FindMe lets guests upload a selfie and paste any public gallery URL. We crawl the album, run Face++ search, and deliver every photo where the guest appears.",
     "ogImage": "https://ai-saas-template-aceternity.vercel.app/banner.png"
   },
   "pricing": {
