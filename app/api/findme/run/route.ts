@@ -9,8 +9,7 @@ import {
   findmeSearchSession,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+import { prepareFileForFacePP } from "@/lib/findme/photo-compression";
 const ADD_FACE_CHUNK_SIZE = 5;
 
 type MatchSummary = {
@@ -50,23 +49,20 @@ export async function POST(req: NextRequest) {
       return errorResponse("请至少上传一张相册照片");
     }
 
-    const oversized = albumEntries.find((file) => file.size > MAX_FILE_SIZE_BYTES);
-    if (oversized) {
-      return errorResponse(
-        `相册照片 ${oversized.name || ""} 超过 2MB，请先压缩后再上传`
-      );
-    }
-
-    if (selfie.size > MAX_FILE_SIZE_BYTES) {
-      return errorResponse("自拍超过 2MB，请先压缩后再上传");
-    }
-
     const client = new FacePPClient();
 
     const albumFiles: { filename: string; contentType: string }[] = [];
     const faceToPhotoIndex = new Map<string, number>();
     const allFaceTokens: string[] = [];
     sessionRecordId = randomUUID();
+
+    const preparedSelfie = await prepareFileForFacePP(selfie);
+    const preparedAlbums = await Promise.all(
+      albumEntries.map(async (file) => ({
+        original: file,
+        prepared: await prepareFileForFacePP(file),
+      }))
+    );
 
     await db.insert(findmeSearchSession).values({
       id: sessionRecordId,
@@ -82,10 +78,10 @@ export async function POST(req: NextRequest) {
     });
 
     for (let i = 0; i < albumEntries.length; i++) {
-      const file = albumEntries[i];
-      const filename = file.name || `album-${i + 1}.jpg`;
-      const contentType = file.type || "image/jpeg";
-      const detectResponse = await client.detectByFile(file);
+      const { original, prepared } = preparedAlbums[i];
+      const filename = original.name || `album-${i + 1}.jpg`;
+      const contentType = prepared.file.type || original.type || "image/jpeg";
+      const detectResponse = await client.detectByFile(prepared.file);
       const faceTokens = detectResponse.faces.map((face) => face.face_token);
 
       detectResponse.faces.forEach((face) => {
@@ -101,9 +97,16 @@ export async function POST(req: NextRequest) {
         photoIndex: i,
         filename,
         contentType,
-        sizeBytes: file.size,
+        sizeBytes: Math.round(prepared.sizeCompressedKB * 1024),
         faceCount: detectResponse.faces.length,
-        metadata: JSON.stringify({ faceTokens }),
+        metadata: JSON.stringify({
+          faceTokens,
+          compression: {
+            status: prepared.status,
+            usedOriginal: prepared.usedOriginal,
+            sizeKB: prepared.sizeCompressedKB,
+          },
+        }),
       });
     }
 
@@ -111,7 +114,7 @@ export async function POST(req: NextRequest) {
       return errorResponse("相册中没有检测到任何人脸，请使用更清晰的照片");
     }
 
-    const selfieDetect = await client.detectByFile(selfie);
+    const selfieDetect = await client.detectByFile(preparedSelfie.file);
     if (!selfieDetect.faces.length) {
       return errorResponse("自拍中未检测到人脸，请重新上传");
     }

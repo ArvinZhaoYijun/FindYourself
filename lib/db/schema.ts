@@ -199,6 +199,28 @@ export const newsletterSubscription = pgTable("newsletter_subscription", {
   updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
+export const photoRecord = pgTable("photo_record", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  originalPath: text("original_path").notNull(),
+  compressedPath: text("compressed_path").notNull(),
+  sizeOriginalKB: integer("size_original_kb").notNull(),
+  sizeCompressedKB: integer("size_compressed_kb"),
+  width: integer("width"),
+  height: integer("height"),
+  status: varchar("status", { length: 32 }).notNull().default("ok"),
+  facesetOuterId: text("faceset_outer_id"),
+  faceTokens: text("face_tokens").array().notNull(),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
 // FindMe search session + audit tables
 export const findmeSearchSession = pgTable("findme_search_session", {
   id: text("id").primaryKey(),

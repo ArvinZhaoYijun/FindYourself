@@ -54,8 +54,6 @@ type AlbumFileState = {
   preview: string;
 };
 
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
-
 export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
   const [eventUrl, setEventUrl] = useState("");
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
@@ -108,11 +106,6 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setError(copy.messages.fileTooLarge);
-      return;
-    }
-
     if (selfiePreview) {
       URL.revokeObjectURL(selfiePreview);
     }
@@ -133,10 +126,6 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
     const next: AlbumFileState[] = [];
     files.forEach((file) => {
       if (!file.type.startsWith("image/")) {
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE_BYTES) {
-        setError(copy.messages.fileTooLarge);
         return;
       }
       next.push({
@@ -293,12 +282,12 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                     className="h-32 w-32 rounded-2xl object-cover"
                   />
                   <p className="text-xs text-muted-foreground">
-                    JPG / PNG · &lt; 2MB
+                    JPG / PNG · 自动压缩
                   </p>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-border/70 bg-background/70 p-4 text-xs text-muted-foreground">
-                  JPG / PNG · &lt; 2MB
+                  JPG / PNG · 自动压缩
                 </div>
               )}
             </div>

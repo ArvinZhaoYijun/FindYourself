@@ -148,7 +148,7 @@
       "title": "FindMe console",
       "subtitle": "Face++ Detect, FaceSet, and Search are fully wired. Start with local albums while the crawler ships.",
       "uploadLabel": "1. Upload your selfie",
-      "uploadHint": "Drag a JPG/PNG (<2MB) or click to select",
+      "uploadHint": "Drag a JPG/PNG and we'll compress it automatically.",
       "urlLabel": "2. Paste the event album URL",
       "urlPlaceholder": "https://example.com/album",
       "startButton": "Start face search",
@@ -169,7 +169,7 @@
         "noResults": "No matches yet. Run the workflow first.",
         "ready": "Selfie locked in, running Face++ search…",
         "downloadReady": "Matches ready. Download each photo individually below.",
-        "fileTooLarge": "Each photo must be smaller than 2MB. Please compress and try again."
+        "fileTooLarge": "Large images are fine—we compress them for you. If it fails, try again later."
       },
       "statuses": {
         "gather": {

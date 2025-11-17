@@ -148,7 +148,7 @@
       "title": "FindMe 操作台",
       "subtitle": "Detect / FaceSet / Search 已全部接好，先用本地相册测试，URL 爬虫即将上线。",
       "uploadLabel": "1. 上传你的自拍",
-      "uploadHint": "拖拽或点击选择 JPG/PNG（<2MB）",
+      "uploadHint": "拖拽或点击选择 JPG/PNG，系统会自动压缩。",
       "urlLabel": "2. 粘贴活动相册链接",
       "urlPlaceholder": "https://example.com/album",
       "startButton": "开始搜索",
@@ -163,7 +163,7 @@
         "noResults": "尚无匹配结果，请先运行流程。",
         "ready": "自拍已锁定，开始调用 Face++ 搜索…",
         "downloadReady": "匹配已完成，可在下方逐张下载。",
-        "fileTooLarge": "每张照片需小于 2MB，请先压缩后再试。"
+        "fileTooLarge": "图片较大也没关系，我们会自动压缩；若失败请稍后重试。"
       },
       "localToggleLabel": "测试模式：上传本地相册",
       "localToggleDescription": "URL 爬虫开发中，先用本地图片完成闭环测试。",

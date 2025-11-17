@@ -321,6 +321,14 @@ pnpm db:push      # 推送 schema 到数据库
 pnpm db:studio    # 打开 Drizzle Studio
 ```
 
+### 🖼 图片压缩模块（FindMe）
+
+- 新增 `POST /api/photos/compress` API，接受 `multipart/form-data`，字段名可为 `files`（多选）或单个 `file`。
+- 服务端会把原图写入 `/uploads/original`，再统一用 Sharp 将长边压到 1000px 并导出 JPEG 到 `/uploads/compressed`。
+- 响应中的 `PhotoRecord[]` 内含原/压缩路径、体积、尺寸和 `status`（`ok` / `oversize` / `error`），供 detect 流程和下载使用。
+- 压缩后若仍 ≥1MB，会被标记为 `oversize` 但不会阻塞流程；真正失败会 `status: "error"` 并将原图副本作为压缩结果。
+- 同步最新 schema 时请运行 `pnpm db:migrate` 应用 `photo_record` 表，并确保部署环境为 `/uploads` 提供可写权限。
+
 ### 🌟 成功案例
 
 > "我不是开发者，我是营销人员。但我用 Sistine + Cursor 在 3 天内发布了我的 AI SaaS。现在月收入 $5K。" - 营销经理转型创始人
