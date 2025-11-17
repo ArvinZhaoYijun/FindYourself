@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, varchar, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, varchar, index, doublePrecision } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -197,4 +197,48 @@ export const newsletterSubscription = pgTable("newsletter_subscription", {
   subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
   unsubscribedAt: timestamp("unsubscribed_at"),
   updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+});
+
+// FindMe search session + audit tables
+export const findmeSearchSession = pgTable("findme_search_session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  eventUrl: text("event_url"),
+  outerId: text("outer_id"),
+  status: varchar("status", { length: 32 }).notNull().default("processing"), // pending, processing, completed, failed
+  selfieStorageUrl: text("selfie_storage_url"),
+  albumCount: integer("album_count").default(0).notNull(),
+  matchCount: integer("match_count").default(0).notNull(),
+  error: text("error"),
+  metadata: text("metadata"), // JSON blob with Face++ stats, request context, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+});
+
+export const findmeSearchAlbum = pgTable("findme_search_album", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => findmeSearchSession.id, { onDelete: "cascade" }),
+  photoIndex: integer("photo_index").notNull(),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  sizeBytes: integer("size_bytes"),
+  storageUrl: text("storage_url"),
+  faceCount: integer("face_count").default(0).notNull(),
+  metadata: text("metadata"), // JSON encoded face tokens or additional info
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const findmeSearchMatch = pgTable("findme_search_match", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => findmeSearchSession.id, { onDelete: "cascade" }),
+  albumPhotoIndex: integer("album_photo_index").notNull(),
+  filename: text("filename").notNull(),
+  confidence: doublePrecision("confidence").notNull(),
+  tokenCount: integer("token_count").notNull(),
+  rank: integer("rank").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

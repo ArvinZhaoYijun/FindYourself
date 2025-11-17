@@ -145,25 +145,32 @@
       }
     },
     "playground": {
-      "title": "体验 FindMe 操作台",
-      "subtitle": "交互全部联通，目前使用 mock 数据，让你提前感知节奏。",
+      "title": "FindMe 操作台",
+      "subtitle": "Detect / FaceSet / Search 已全部接好，先用本地相册测试，URL 爬虫即将上线。",
       "uploadLabel": "1. 上传你的自拍",
-      "uploadHint": "拖拽或点击选择 JPG/PNG",
+      "uploadHint": "拖拽或点击选择 JPG/PNG（<2MB）",
       "urlLabel": "2. 粘贴活动相册链接",
       "urlPlaceholder": "https://example.com/album",
-      "startButton": "运行 Mock 搜索",
+      "startButton": "开始搜索",
       "resetButton": "重置表单",
-      "downloadCta": "下载 ZIP（模拟）",
-      "downloadHelp": "匹配完成前按钮保持禁用，后续会接入真实 ZIP 服务。",
       "resultsTitle": "匹配到的照片",
-      "resultsEmpty": "先运行一次流程，即可看到示例结果。",
+      "resultsEmpty": "运行流程后会在这里展示匹配结果。",
+      "resultsHelp": "点击每张照片下方的按钮逐一下载原图。",
+      "cardDownloadCta": "下载此照片",
       "messages": {
-        "missingFields": "请先上传自拍并填写活动链接。",
+        "missingFields": "请先上传自拍并选择至少一张相册照片。",
         "invalidSelfie": "自拍上传仅支持图片文件。",
         "noResults": "尚无匹配结果，请先运行流程。",
-        "ready": "自拍已锁定，开始模拟流程…",
-        "downloadReady": "Mock ZIP 已准备好，接入真实打包接口后替换此逻辑。"
+        "ready": "自拍已锁定，开始调用 Face++ 搜索…",
+        "downloadReady": "匹配已完成，可在下方逐张下载。",
+        "fileTooLarge": "每张照片需小于 2MB，请先压缩后再试。"
       },
+      "localToggleLabel": "测试模式：上传本地相册",
+      "localToggleDescription": "URL 爬虫开发中，先用本地图片完成闭环测试。",
+      "albumUploadCta": "选择相册照片",
+      "albumSelectedLabel": "已准备 {count} 张照片用于检测",
+      "albumClearCta": "清空选择",
+      "urlDisabled": "URL 爬虫尚未开放，请开启本地相册上传。",
       "statuses": {
         "gather": {
           "title": "爬取活动相册",

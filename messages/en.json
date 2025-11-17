@@ -145,24 +145,31 @@
       }
     },
     "playground": {
-      "title": "Preview the FindMe console",
-      "subtitle": "All interactions are wired. API calls are mocked so you can feel the flow before integrations land.",
+      "title": "FindMe console",
+      "subtitle": "Face++ Detect, FaceSet, and Search are fully wired. Start with local albums while the crawler ships.",
       "uploadLabel": "1. Upload your selfie",
-      "uploadHint": "Drag a JPG/PNG or click to select",
+      "uploadHint": "Drag a JPG/PNG (<2MB) or click to select",
       "urlLabel": "2. Paste the event album URL",
       "urlPlaceholder": "https://example.com/album",
-      "startButton": "Run mock search",
+      "startButton": "Start face search",
       "resetButton": "Reset form",
-      "downloadCta": "Download ZIP (mock)",
-      "downloadHelp": "The button unlocks once matches are ready. Replace this stub when the ZIP service ships.",
       "resultsTitle": "Matched photos",
-      "resultsEmpty": "Run the mock workflow to preview matches.",
+      "resultsEmpty": "Run the workflow to populate matches here.",
+      "resultsHelp": "Use the download button on each card to grab the original photo.",
+      "cardDownloadCta": "Download this photo",
+      "localToggleLabel": "Test mode: upload local album",
+      "localToggleDescription": "Use this while the crawler for public URLs is being wired up.",
+      "albumUploadCta": "Select album photos",
+      "albumSelectedLabel": "{count} photos ready for detection",
+      "albumClearCta": "Clear selection",
+      "urlDisabled": "URL crawling is not ready yet. Please enable local album upload.",
       "messages": {
-        "missingFields": "Please upload a selfie and paste the album URL before running FindMe.",
+        "missingFields": "Please upload a selfie and at least one album photo.",
         "invalidSelfie": "Only image files are supported for the selfie upload.",
         "noResults": "No matches yet. Run the workflow first.",
-        "ready": "Selfie locked in. Running the FindMe mock now…",
-        "downloadReady": "Mock ZIP prepared. Hook this CTA to the real packaging API later."
+        "ready": "Selfie locked in, running Face++ search…",
+        "downloadReady": "Matches ready. Download each photo individually below.",
+        "fileTooLarge": "Each photo must be smaller than 2MB. Please compress and try again."
       },
       "statuses": {
         "gather": {

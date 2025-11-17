@@ -1,22 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/button";
 import { Input } from "@/features/forms/components/input";
+import { Switch } from "@/components/switch";
 import { cn } from "@/lib/utils";
 
 export type PlaygroundStatus = {
   title: string;
   description: string;
-};
-
-export type PlaygroundMockResult = {
-  id: string;
-  image: string;
-  caption: string;
-  detail: string;
-  score: string;
 };
 
 export type PlaygroundCopy = {
@@ -28,56 +20,96 @@ export type PlaygroundCopy = {
   urlPlaceholder: string;
   startButton: string;
   resetButton: string;
-  downloadCta: string;
-  downloadHelp: string;
   resultsTitle: string;
   resultsEmpty: string;
+  resultsHelp: string;
+  cardDownloadCta: string;
+  localToggleLabel: string;
+  localToggleDescription: string;
+  albumUploadCta: string;
+  albumSelectedLabel: string;
+  albumClearCta: string;
+  urlDisabled: string;
   messages: {
     missingFields: string;
     invalidSelfie: string;
     noResults: string;
     ready: string;
     downloadReady: string;
+    fileTooLarge: string;
   };
   statuses: PlaygroundStatus[];
-  mockResults: PlaygroundMockResult[];
 };
+
+type SearchMatch = {
+  photoIndex: number;
+  filename: string;
+  confidence: number;
+  tokenCount: number;
+};
+
+type AlbumFileState = {
+  id: string;
+  file: File;
+  preview: string;
+};
+
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 
 export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
   const [eventUrl, setEventUrl] = useState("");
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
+  const [albumFiles, setAlbumFiles] = useState<AlbumFileState[]>([]);
+  const [useLocalAlbum, setUseLocalAlbum] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [results, setResults] = useState<PlaygroundMockResult[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
+  const [matches, setMatches] = useState<SearchMatch[]>([]);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selfieInputRef = useRef<HTMLInputElement | null>(null);
+  const albumInputRef = useRef<HTMLInputElement | null>(null);
+  const albumFilesRef = useRef<AlbumFileState[]>([]);
 
-  const cleanupTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
+  useEffect(() => {
+    albumFilesRef.current = albumFiles;
+  }, [albumFiles]);
 
   useEffect(() => {
     return () => {
-      cleanupTimer();
+      albumFilesRef.current.forEach((file) => URL.revokeObjectURL(file.preview));
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
       if (selfiePreview) {
         URL.revokeObjectURL(selfiePreview);
       }
     };
   }, [selfiePreview]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const albumCountLabel = useMemo(() => {
+    return copy.albumSelectedLabel.replace(
+      "{count}",
+      albumFiles.length.toString()
+    );
+  }, [albumFiles.length, copy.albumSelectedLabel]);
+
+  const handleSelfieChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      setMessage(copy.messages.invalidSelfie);
+      setError(copy.messages.invalidSelfie);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setError(copy.messages.fileTooLarge);
       return;
     }
 
@@ -86,60 +118,136 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
     }
 
     const previewUrl = URL.createObjectURL(file);
+    setSelfieFile(file);
     setSelfiePreview(previewUrl);
-    setMessage(copy.messages.ready);
+    setStatusMessage(copy.messages.ready);
+    setError(null);
   };
 
-  const startProcessing = () => {
-    if (!selfiePreview || !eventUrl.trim()) {
-      setMessage(copy.messages.missingFields);
+  const handleAlbumUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) {
       return;
     }
 
-    cleanupTimer();
-    setIsProcessing(true);
-    setResults([]);
-    setMessage(copy.messages.ready);
-
-    let currentStep = 1;
-    setActiveStep(currentStep);
-
-    timerRef.current = setInterval(() => {
-      currentStep += 1;
-      if (currentStep <= copy.statuses.length) {
-        setActiveStep(currentStep);
-      } else {
-        cleanupTimer();
-        setIsProcessing(false);
-        setActiveStep(copy.statuses.length);
-        setResults(copy.mockResults);
-        setMessage(copy.messages.downloadReady);
+    const next: AlbumFileState[] = [];
+    files.forEach((file) => {
+      if (!file.type.startsWith("image/")) {
+        return;
       }
-    }, 900);
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        setError(copy.messages.fileTooLarge);
+        return;
+      }
+      next.push({
+        id: crypto.randomUUID(),
+        file,
+        preview: URL.createObjectURL(file),
+      });
+    });
+
+    if (next.length) {
+      setAlbumFiles((prev) => [...prev, ...next]);
+      setError(null);
+    }
+    if (albumInputRef.current) {
+      albumInputRef.current.value = "";
+    }
+  };
+
+  const removeAlbumFile = (id: string) => {
+    setAlbumFiles((prev) => {
+      const target = prev.find((file) => file.id === id);
+      if (target) {
+        URL.revokeObjectURL(target.preview);
+      }
+      return prev.filter((file) => file.id !== id);
+    });
+  };
+
+  const clearAlbumFiles = () => {
+    albumFiles.forEach((file) => URL.revokeObjectURL(file.preview));
+    setAlbumFiles([]);
   };
 
   const handleReset = () => {
-    cleanupTimer();
     if (selfiePreview) {
       URL.revokeObjectURL(selfiePreview);
     }
-    setEventUrl("");
+    selfieInputRef.current && (selfieInputRef.current.value = "");
+    albumInputRef.current && (albumInputRef.current.value = "");
+    clearAlbumFiles();
+    setSelfieFile(null);
     setSelfiePreview(null);
-    setIsProcessing(false);
+    setEventUrl("");
+    setMatches([]);
     setActiveStep(0);
-    setResults([]);
-    setMessage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    setStatusMessage(null);
+    setError(null);
+  };
+
+  const startProcessing = async () => {
+    if (!selfieFile || (useLocalAlbum && !albumFiles.length)) {
+      setError(copy.messages.missingFields);
+      return;
+    }
+
+    if (!useLocalAlbum) {
+      setError(copy.urlDisabled);
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setActiveStep(1);
+      setMatches([]);
+      setStatusMessage(copy.messages.ready);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append("selfie", selfieFile);
+      albumFiles.forEach((item) => {
+        formData.append("album", item.file);
+      });
+      formData.append("useLocalAlbum", useLocalAlbum.toString());
+      formData.append("eventUrl", eventUrl);
+
+      const response = await fetch("/api/findme/run", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || copy.messages.noResults);
+      }
+
+      const resultMatches: SearchMatch[] = payload.matches ?? [];
+      setMatches(resultMatches);
+      setActiveStep(copy.statuses.length);
+      setStatusMessage(
+        resultMatches.length ? copy.messages.downloadReady : copy.messages.noResults
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "运行失败，请稍后再试");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleDownload = () => {
-    if (!results.length) {
-      setMessage(copy.messages.noResults);
+  const handleDownloadSingle = (match: SearchMatch) => {
+    const album = albumFiles[match.photoIndex];
+    if (!album) {
+      setError(copy.messages.noResults);
       return;
     }
-    setMessage(copy.messages.downloadReady);
+    const link = document.createElement("a");
+    link.href = album.preview;
+    link.download =
+      album.file.name || match.filename || `findme-${match.photoIndex + 1}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const progress =
@@ -158,40 +266,45 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
         </p>
         <h2 className="text-3xl font-semibold">{copy.title}</h2>
       </div>
-      <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="flex h-full cursor-pointer flex-col justify-between rounded-3xl border border-dashed border-primary/50 bg-primary/5 p-6 transition hover:border-primary">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={handleFileChange}
-              />
-              <span className="text-sm font-semibold text-primary">
-                {copy.uploadLabel}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {copy.uploadHint}
-              </span>
+      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="flex flex-col gap-6">
+          <label className="cursor-pointer rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-6 transition hover:border-primary">
+            <input
+              ref={selfieInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleSelfieChange}
+            />
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-primary">
+                  {copy.uploadLabel}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {copy.uploadHint}
+                </p>
+              </div>
               {selfiePreview ? (
-                <div className="mt-4">
-                  <Image
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <img
                     src={selfiePreview}
                     alt="Selfie preview"
-                    width={320}
-                    height={320}
                     className="h-32 w-32 rounded-2xl object-cover"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    JPG / PNG · &lt; 2MB
+                  </p>
                 </div>
               ) : (
-                <div className="mt-4 rounded-2xl border border-border/70 bg-background/70 p-4 text-xs text-muted-foreground">
-                  JPG / PNG · &lt; 10MB
+                <div className="rounded-2xl border border-border/70 bg-background/70 p-4 text-xs text-muted-foreground">
+                  JPG / PNG · &lt; 2MB
                 </div>
               )}
-            </label>
-            <div className="rounded-3xl border border-border/70 bg-muted/20 p-6">
+            </div>
+          </label>
+          <div className="rounded-3xl border border-border/70 bg-muted/20 p-6 space-y-6">
+            <div className="space-y-3">
               <label className="text-sm font-semibold text-foreground">
                 {copy.urlLabel}
               </label>
@@ -199,11 +312,90 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                 value={eventUrl}
                 onChange={(event) => setEventUrl(event.target.value)}
                 placeholder={copy.urlPlaceholder}
-                className="mt-3"
               />
-              <p className="mt-2 text-xs text-muted-foreground">
-                *.jpg / *.png only · public URLs
-              </p>
+            </div>
+            <div className="rounded-2xl border border-dashed border-border/60 bg-background/70 p-4 space-y-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold">{copy.localToggleLabel}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {copy.localToggleDescription}
+                  </p>
+                </div>
+                <Switch
+                  checked={useLocalAlbum}
+                  onCheckedChange={(value) => setUseLocalAlbum(Boolean(value))}
+                />
+              </div>
+              {useLocalAlbum ? (
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-auto justify-center"
+                      onClick={() => albumInputRef.current?.click()}
+                    >
+                      {copy.albumUploadCta}
+                    </Button>
+                    <input
+                      ref={albumInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="sr-only"
+                      onChange={handleAlbumUpload}
+                    />
+                    {albumFiles.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="simple"
+                        size="sm"
+                        className="text-xs sm:ml-auto sm:w-auto w-full"
+                        onClick={clearAlbumFiles}
+                      >
+                        {copy.albumClearCta}
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {albumCountLabel}
+                  </p>
+                  {albumFiles.length > 0 && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {albumFiles.map((file, index) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/80 p-3"
+                        >
+                          <img
+                            src={file.preview}
+                            alt={file.file.name || `album-${index + 1}`}
+                            className="h-14 w-14 rounded-xl object-cover"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium truncate">
+                              {file.file.name || `album-${index + 1}`}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {Math.round(file.file.size / 1024)} KB
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="simple"
+                            onClick={() => removeAlbumFile(file.id)}
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">{copy.urlDisabled}</p>
+              )}
             </div>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row">
@@ -218,13 +410,15 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
               variant="outline"
               onClick={handleReset}
               className="w-full sm:w-auto"
+              disabled={isProcessing}
             >
               {copy.resetButton}
             </Button>
           </div>
-          {message && (
-            <p className="text-sm text-muted-foreground">{message}</p>
+          {statusMessage && (
+            <p className="text-sm text-muted-foreground">{statusMessage}</p>
           )}
+          {error && <p className="text-sm text-red-400">{error}</p>}
         </div>
         <div className="rounded-3xl border border-border/70 bg-background/70 p-6">
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
@@ -235,9 +429,8 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
           </div>
           <ul className="mt-6 space-y-4">
             {copy.statuses.map((status, index) => {
-              const isPast = activeStep > 0 && index + 1 < activeStep;
-              const isCurrent = activeStep > 0 && index + 1 === activeStep;
-              const isDone = isPast || (isCurrent && !isProcessing);
+              const isCurrent = index + 1 === activeStep;
+              const isDone = index + 1 <= activeStep && activeStep > 0;
               const stateClass = isDone
                 ? "border-emerald-400/50 bg-emerald-400/10"
                 : isCurrent
@@ -264,49 +457,52 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
         </div>
       </div>
       <div className="space-y-4 rounded-3xl border border-border/70 bg-background/90 p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-lg font-semibold">{copy.resultsTitle}</p>
-            <p className="text-sm text-muted-foreground">
-              {results.length ? copy.downloadHelp : copy.resultsEmpty}
-            </p>
-          </div>
-          <Button
-            className={cn(
-              "w-full md:w-auto",
-              !results.length && "pointer-events-none opacity-60"
-            )}
-            onClick={handleDownload}
-            aria-disabled={!results.length}
-          >
-            {copy.downloadCta}
-          </Button>
+        <div>
+          <p className="text-lg font-semibold">{copy.resultsTitle}</p>
+          <p className="text-sm text-muted-foreground">
+            {matches.length ? copy.resultsHelp : copy.resultsEmpty}
+          </p>
         </div>
-        {results.length ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            {results.map((match) => (
-              <article
-                key={match.id}
-                className="rounded-3xl border border-border/70 bg-muted/10 p-4"
-              >
-                <Image
-                  src={match.image}
-                  alt={match.caption}
-                  width={480}
-                  height={320}
-                  className="h-40 w-full rounded-2xl object-cover"
-                />
-                <div className="mt-3 space-y-1">
-                  <p className="text-sm font-semibold">{match.caption}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {match.detail}
-                  </p>
-                  <p className="text-xs text-primary font-semibold">
-                    {match.score}
-                  </p>
-                </div>
-              </article>
-            ))}
+        {matches.length ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {matches.map((match) => {
+              const album = albumFiles[match.photoIndex];
+              return (
+                <article
+                  key={`${match.photoIndex}-${match.confidence}`}
+                  className="rounded-3xl border border-border/70 bg-muted/10 p-4 flex flex-col gap-3"
+                >
+                  {album ? (
+                    <img
+                      src={album.preview}
+                      alt={album.file.name || match.filename}
+                      className="h-40 w-full rounded-2xl object-cover"
+                    />
+                  ) : (
+                    <div className="h-40 w-full rounded-2xl bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                      {match.filename}
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold truncate">
+                      {match.filename}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {match.tokenCount} face hits · {match.confidence.toFixed(2)}%
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-auto w-full"
+                    onClick={() => handleDownloadSingle(match)}
+                    disabled={!album}
+                  >
+                    {copy.cardDownloadCta}
+                  </Button>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">{copy.resultsEmpty}</p>

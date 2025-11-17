@@ -1,0 +1,1 @@
+ALTER TABLE "findme_search_session" ALTER COLUMN "user_id" DROP NOT NULL;
