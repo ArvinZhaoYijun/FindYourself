@@ -1,14 +1,31 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useId } from "react";
-export const Switch = ({
-  checked,
-  setChecked,
-}: {
+import { useCallback, useId } from "react";
+
+type SwitchProps = {
   checked: boolean;
-  setChecked: (checked: boolean) => void;
-}) => {
+  setChecked?: (checked: boolean) => void;
+  onCheckedChange?: (checked: boolean) => void;
+};
+
+export const Switch = ({ checked, setChecked, onCheckedChange }: SwitchProps) => {
   const id = useId();
+  const handleChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.checked;
+      if (typeof onCheckedChange === "function") {
+        onCheckedChange(value);
+        return;
+      }
+      if (typeof setChecked === "function") {
+        setChecked(value);
+        return;
+      }
+      console.warn("[Switch] No handler provided for checked state change.");
+    },
+    [onCheckedChange, setChecked]
+  );
+
   return (
     <form className="flex space-x-4  antialiased items-center">
       <label
@@ -38,7 +55,7 @@ export const Switch = ({
         <input
           type="checkbox"
           checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
+          onChange={handleChange}
           className="hidden"
           id={id}
         />

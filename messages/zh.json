@@ -166,11 +166,11 @@
         "fileTooLarge": "图片较大也没关系，我们会自动压缩；若失败请稍后重试。"
       },
       "localToggleLabel": "测试模式：上传本地相册",
-      "localToggleDescription": "URL 爬虫开发中，先用本地图片完成闭环测试。",
+      "localToggleDescription": "关闭即可抓取 Pixcheese 链接，开启则继续使用本地相册测试。",
       "albumUploadCta": "选择相册照片",
       "albumSelectedLabel": "已准备 {count} 张照片用于检测",
       "albumClearCta": "清空选择",
-      "urlDisabled": "URL 爬虫尚未开放，请开启本地相册上传。",
+      "urlDisabled": "请输入 Pixcheese 相册链接（https://v.pixcheese.com/s/xxxx），我们会自动导入照片。",
       "statuses": {
         "gather": {
           "title": "爬取活动相册",

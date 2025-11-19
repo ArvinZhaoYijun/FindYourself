@@ -158,11 +158,11 @@
       "resultsHelp": "Use the download button on each card to grab the original photo.",
       "cardDownloadCta": "Download this photo",
       "localToggleLabel": "Test mode: upload local album",
-      "localToggleDescription": "Use this while the crawler for public URLs is being wired up.",
+      "localToggleDescription": "Turn this off to import from Pixcheese links. Keep it on to test with local uploads.",
       "albumUploadCta": "Select album photos",
       "albumSelectedLabel": "{count} photos ready for detection",
       "albumClearCta": "Clear selection",
-      "urlDisabled": "URL crawling is not ready yet. Please enable local album upload.",
+      "urlDisabled": "Paste a Pixcheese album link (https://v.pixcheese.com/s/xxxx) and we'll import your photos automatically.",
       "messages": {
         "missingFields": "Please upload a selfie and at least one album photo.",
         "invalidSelfie": "Only image files are supported for the selfie upload.",

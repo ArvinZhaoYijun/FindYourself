@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/button";
 import { Input } from "@/features/forms/components/input";
 import { Switch } from "@/components/switch";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export type PlaygroundStatus = {
   title: string;
@@ -46,6 +47,8 @@ type SearchMatch = {
   filename: string;
   confidence: number;
   tokenCount: number;
+  previewUrl?: string;
+  sourceUrl?: string;
 };
 
 type AlbumFileState = {
@@ -63,8 +66,26 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [matches, setMatches] = useState<SearchMatch[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const previewItems = useMemo(
+    () =>
+      matches.map((match) => {
+        const album = albumFiles[match.photoIndex];
+        const previewUrl = match.previewUrl ?? album?.preview ?? null;
+        return {
+          match,
+          album,
+          previewUrl,
+        };
+      }),
+    [matches, albumFiles]
+  );
+  const currentPreview =
+    previewIndex !== null ? previewItems[previewIndex] : null;
+  const canNavigatePreview = previewItems.length > 1;
 
   const selfieInputRef = useRef<HTMLInputElement | null>(null);
   const albumInputRef = useRef<HTMLInputElement | null>(null);
@@ -94,6 +115,78 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
       albumFiles.length.toString()
     );
   }, [albumFiles.length, copy.albumSelectedLabel]);
+
+  const handleOpenPreview = useCallback(
+    (index: number) => {
+      if (!previewItems[index]?.previewUrl) {
+        return;
+      }
+      setPreviewIndex(index);
+    },
+    [previewItems]
+  );
+
+  const closePreview = useCallback(() => setPreviewIndex(null), []);
+
+  const showPrevPreview = useCallback(() => {
+    setPreviewIndex((prev) => {
+      if (prev === null) {
+        return prev;
+      }
+      const total = previewItems.length;
+      if (!total) {
+        return null;
+      }
+      return (prev - 1 + total) % total;
+    });
+  }, [previewItems.length]);
+
+  const showNextPreview = useCallback(() => {
+    setPreviewIndex((prev) => {
+      if (prev === null) {
+        return prev;
+      }
+      const total = previewItems.length;
+      if (!total) {
+        return null;
+      }
+      return (prev + 1) % total;
+    });
+  }, [previewItems.length]);
+
+  useEffect(() => {
+    if (previewIndex === null) {
+      return;
+    }
+    if (previewIndex >= previewItems.length) {
+      setPreviewIndex(null);
+    }
+  }, [previewIndex, previewItems.length]);
+
+  useEffect(() => {
+    if (previewIndex === null) {
+      document.body.style.removeProperty("overflow");
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closePreview();
+      } else if (event.key === "ArrowLeft") {
+        showPrevPreview();
+      } else if (event.key === "ArrowRight") {
+        showNextPreview();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.removeProperty("overflow");
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [previewIndex, closePreview, showPrevPreview, showNextPreview]);
 
   const handleSelfieChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -176,12 +269,18 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
   };
 
   const startProcessing = async () => {
-    if (!selfieFile || (useLocalAlbum && !albumFiles.length)) {
+    if (!selfieFile) {
       setError(copy.messages.missingFields);
       return;
     }
 
-    if (!useLocalAlbum) {
+    if (useLocalAlbum && !albumFiles.length) {
+      setError(copy.messages.missingFields);
+      return;
+    }
+
+    const trimmedUrl = eventUrl.trim();
+    if (!useLocalAlbum && !trimmedUrl) {
       setError(copy.urlDisabled);
       return;
     }
@@ -195,11 +294,13 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
 
       const formData = new FormData();
       formData.append("selfie", selfieFile);
-      albumFiles.forEach((item) => {
-        formData.append("album", item.file);
-      });
+      if (useLocalAlbum) {
+        albumFiles.forEach((item) => {
+          formData.append("album", item.file);
+        });
+      }
       formData.append("useLocalAlbum", useLocalAlbum.toString());
-      formData.append("eventUrl", eventUrl);
+      formData.append("eventUrl", trimmedUrl);
 
       const response = await fetch("/api/findme/run", {
         method: "POST",
@@ -226,14 +327,16 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
 
   const handleDownloadSingle = (match: SearchMatch) => {
     const album = albumFiles[match.photoIndex];
-    if (!album) {
+    const downloadUrl = match.sourceUrl ?? album?.preview ?? match.previewUrl;
+    if (!downloadUrl) {
       setError(copy.messages.noResults);
       return;
     }
+
     const link = document.createElement("a");
-    link.href = album.preview;
+    link.href = downloadUrl;
     link.download =
-      album.file.name || match.filename || `findme-${match.photoIndex + 1}.jpg`;
+      album?.file.name || match.filename || `findme-${match.photoIndex + 1}.jpg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -454,21 +557,33 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
         </div>
         {matches.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {matches.map((match) => {
+            {matches.map((match, index) => {
               const album = albumFiles[match.photoIndex];
+              const previewSrc = match.previewUrl ?? album?.preview;
+              const hasPreview = Boolean(previewSrc);
+              const canDownload = Boolean(match.sourceUrl || previewSrc);
               return (
                 <article
                   key={`${match.photoIndex}-${match.confidence}`}
                   className="rounded-3xl border border-border/70 bg-muted/10 p-4 flex flex-col gap-3"
                 >
-                  {album ? (
-                    <img
-                      src={album.preview}
-                      alt={album.file.name || match.filename}
-                      className="h-40 w-full rounded-2xl object-cover"
-                    />
+                  {hasPreview ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPreview(index)}
+                      className="group block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      aria-label={`预览 ${match.filename}`}
+                    >
+                      <div className="aspect-square w-full overflow-hidden rounded-2xl bg-muted">
+                        <img
+                          src={previewSrc ?? ""}
+                          alt={album?.file.name || match.filename}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                    </button>
                   ) : (
-                    <div className="h-40 w-full rounded-2xl bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                    <div className="aspect-square w-full rounded-2xl bg-muted flex items-center justify-center text-xs text-muted-foreground">
                       {match.filename}
                     </div>
                   )}
@@ -485,7 +600,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                     size="sm"
                     className="mt-auto w-full"
                     onClick={() => handleDownloadSingle(match)}
-                    disabled={!album}
+                    disabled={!canDownload}
                   >
                     {copy.cardDownloadCta}
                   </Button>
@@ -497,6 +612,68 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
           <p className="text-sm text-muted-foreground">{copy.resultsEmpty}</p>
         )}
       </div>
+      {previewIndex !== null && currentPreview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={closePreview}
+        >
+          <div
+            className="relative flex max-h-full w-full max-w-5xl flex-col items-center gap-4"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closePreview}
+              className="absolute right-0 top-0 rounded-full bg-black/50 p-2 text-white transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              aria-label="关闭预览"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="relative flex w-full items-center justify-center">
+              {canNavigatePreview && (
+                <button
+                  type="button"
+                  onClick={showPrevPreview}
+                  className="absolute left-0 rounded-full bg-black/50 p-2 text-white transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  aria-label="上一张照片"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+              {currentPreview.previewUrl ? (
+                <img
+                  src={currentPreview.previewUrl}
+                  alt={currentPreview.match.filename}
+                  className="max-h-[75vh] w-auto max-w-full rounded-3xl object-contain shadow-2xl"
+                />
+              ) : (
+                <div className="flex h-[60vh] w-full items-center justify-center rounded-3xl bg-background/80 text-sm text-foreground">
+                  {currentPreview.match.filename}
+                </div>
+              )}
+              {canNavigatePreview && (
+                <button
+                  type="button"
+                  onClick={showNextPreview}
+                  className="absolute right-0 rounded-full bg-black/50 p-2 text-white transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  aria-label="下一张照片"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
+            <div className="text-center text-sm text-white">
+              <p className="font-semibold">{currentPreview.match.filename}</p>
+              <p className="text-xs text-white/80">
+                {currentPreview.match.tokenCount} face hits ·{" "}
+                {currentPreview.match.confidence.toFixed(2)}%
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -10,6 +10,11 @@ import {
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { prepareFileForFacePP } from "@/lib/findme/photo-compression";
+import {
+  fetchPixcheeseAlbumFiles,
+  PixcheeseError,
+  type PixcheeseAlbumFetchResult,
+} from "@/lib/pixcheese/server";
 const ADD_FACE_CHUNK_SIZE = 5;
 
 type MatchSummary = {
@@ -17,6 +22,8 @@ type MatchSummary = {
   filename: string;
   confidence: number;
   tokenCount: number;
+  previewUrl?: string;
+  sourceUrl?: string;
 };
 
 function errorResponse(message: string, status = 400) {
@@ -29,38 +36,87 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const selfie = formData.get("selfie");
-    const albumEntries = formData
-      .getAll("album")
-      .filter((item): item is File => item instanceof File);
     const useLocalAlbum = formData.get("useLocalAlbum") === "true";
     const eventUrl = formData.get("eventUrl")?.toString() ?? "";
     const session = await auth.api.getSession({ headers: req.headers });
     const userId = session?.session?.userId ?? null;
+    const uploadedAlbumEntries = formData
+      .getAll("album")
+      .filter((item): item is File => item instanceof File);
 
     if (!(selfie instanceof File)) {
       return errorResponse("请上传自拍照片");
     }
 
-    if (!useLocalAlbum) {
-      return errorResponse("URL 爬取模块尚未准备好，目前仅支持本地相册上传");
+    type AlbumSource = {
+      id: string;
+      file: File;
+      filename: string;
+      contentType: string;
+      previewUrl?: string;
+      sourceUrl?: string;
+    };
+
+    let remoteAlbum: PixcheeseAlbumFetchResult | null = null;
+    let albumSources: AlbumSource[] = [];
+
+    if (useLocalAlbum) {
+      albumSources = uploadedAlbumEntries.map((file, index) => ({
+        id: `local-${index}`,
+        file,
+        filename: file.name || `album-${index + 1}.jpg`,
+        contentType: file.type || "image/jpeg",
+      }));
+
+      if (!albumSources.length) {
+        return errorResponse("请至少上传一张相册照片");
+      }
+    } else {
+      if (!eventUrl) {
+        return errorResponse("请输入 Pixcheese 相册链接");
+      }
+
+      try {
+        remoteAlbum = await fetchPixcheeseAlbumFiles({
+          shareUrl: eventUrl,
+        });
+      } catch (error) {
+        const message =
+          error instanceof PixcheeseError ? error.message : "相册链接解析失败";
+        return errorResponse(message);
+      }
+
+      albumSources = remoteAlbum.photos.map((photo, index) => ({
+        id: photo.id || `remote-${index}`,
+        file: photo.file,
+        filename: photo.filename || `album-${index + 1}.jpg`,
+        contentType: photo.contentType || "image/jpeg",
+        previewUrl: photo.previewUrl,
+        sourceUrl: photo.fileUrl,
+      }));
     }
 
-    if (!albumEntries.length) {
-      return errorResponse("请至少上传一张相册照片");
+    if (!albumSources.length) {
+      return errorResponse("未获取到任何相册照片");
     }
 
     const client = new FacePPClient();
 
-    const albumFiles: { filename: string; contentType: string }[] = [];
+    const albumFiles: {
+      filename: string;
+      contentType: string;
+      previewUrl?: string;
+      sourceUrl?: string;
+    }[] = [];
     const faceToPhotoIndex = new Map<string, number>();
     const allFaceTokens: string[] = [];
     sessionRecordId = randomUUID();
 
     const preparedSelfie = await prepareFileForFacePP(selfie);
     const preparedAlbums = await Promise.all(
-      albumEntries.map(async (file) => ({
-        original: file,
-        prepared: await prepareFileForFacePP(file),
+      albumSources.map(async (item) => ({
+        original: item,
+        prepared: await prepareFileForFacePP(item.file),
       }))
     );
 
@@ -69,18 +125,26 @@ export async function POST(req: NextRequest) {
       userId: userId ?? undefined,
       eventUrl,
       status: "processing",
-      albumCount: albumEntries.length,
+      albumCount: albumSources.length,
       metadata: JSON.stringify({
         useLocalAlbum,
         clientEventUrl: eventUrl,
         selfieName: selfie.name,
+        remoteSource: remoteAlbum
+          ? {
+              type: "pixcheese",
+              shareKey: remoteAlbum.shareKey,
+              projectId: remoteAlbum.projectId,
+              photoCount: remoteAlbum.photos.length,
+            }
+          : undefined,
       }),
     });
 
-    for (let i = 0; i < albumEntries.length; i++) {
+    for (let i = 0; i < albumSources.length; i++) {
       const { original, prepared } = preparedAlbums[i];
-      const filename = original.name || `album-${i + 1}.jpg`;
-      const contentType = prepared.file.type || original.type || "image/jpeg";
+      const filename = original.filename || `album-${i + 1}.jpg`;
+      const contentType = prepared.file.type || original.contentType || "image/jpeg";
       const detectResponse = await client.detectByFile(prepared.file);
       const faceTokens = detectResponse.faces.map((face) => face.face_token);
 
@@ -89,7 +153,12 @@ export async function POST(req: NextRequest) {
         allFaceTokens.push(face.face_token);
       });
 
-      albumFiles.push({ filename, contentType });
+      albumFiles.push({
+        filename,
+        contentType,
+        previewUrl: original.previewUrl,
+        sourceUrl: original.sourceUrl,
+      });
 
       await db.insert(findmeSearchAlbum).values({
         id: randomUUID(),
@@ -106,6 +175,13 @@ export async function POST(req: NextRequest) {
             usedOriginal: prepared.usedOriginal,
             sizeKB: prepared.sizeCompressedKB,
           },
+          source: original.sourceUrl
+            ? {
+                type: "pixcheese",
+                fileUrl: original.sourceUrl,
+                previewUrl: original.previewUrl,
+              }
+            : undefined,
         }),
       });
     }
@@ -136,26 +212,43 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const searchResponse = await client.searchByFaceToken(outerId, selfieToken);
+    const searchResponse = await client.searchByFaceToken(outerId, selfieToken, 5);
     const photoMatches = new Map<number, MatchSummary>();
 
+    // 使用 Face++ 推荐的万分之一误报率阈值
+    const confidenceThreshold = searchResponse.thresholds?.["1e-4"] ?? 70;
+
     for (const result of searchResponse.results ?? []) {
+      // 过滤低置信度结果
+      if (result.confidence < confidenceThreshold) {
+        continue;
+      }
+
       const photoIndex = faceToPhotoIndex.get(result.face_token);
       if (photoIndex === undefined) {
         continue;
       }
 
+      const albumMeta = albumFiles[photoIndex];
       const existing = photoMatches.get(photoIndex);
       if (!existing) {
         photoMatches.set(photoIndex, {
           photoIndex,
-          filename: albumFiles[photoIndex]?.filename ?? `match-${photoIndex + 1}.jpg`,
+          filename: albumMeta?.filename ?? `match-${photoIndex + 1}.jpg`,
           confidence: result.confidence,
           tokenCount: 1,
+          previewUrl: albumMeta?.previewUrl,
+          sourceUrl: albumMeta?.sourceUrl,
         });
       } else {
         existing.confidence = Math.max(existing.confidence, result.confidence);
         existing.tokenCount += 1;
+        if (!existing.previewUrl && albumMeta?.previewUrl) {
+          existing.previewUrl = albumMeta.previewUrl;
+        }
+        if (!existing.sourceUrl && albumMeta?.sourceUrl) {
+          existing.sourceUrl = albumMeta.sourceUrl;
+        }
       }
     }
 

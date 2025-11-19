@@ -124,11 +124,13 @@ export class FacePPClient {
 
   searchByFaceToken(
     outerId: string,
-    faceToken: string
+    faceToken: string,
+    returnCount = 5
   ): Promise<FacePPSearchResponse> {
     return this.postForm("search", (form) => {
       form.append("outer_id", outerId);
       form.append("face_token", faceToken);
+      form.append("return_result_count", Math.max(1, Math.min(5, returnCount)).toString());
     });
   }
 }
