@@ -138,17 +138,17 @@
       }
     },
     "playground": {
-      "title": "FindMe 操作台",
-      "subtitle": "Detect / FaceSet / Search 已全部接好，先用本地相册测试，URL 爬虫即将上线。",
-      "uploadLabel": "1. 上传你的自拍",
-      "uploadHint": "拖拽或点击选择 JPG/PNG，系统会自动压缩。",
-      "urlLabel": "2. 粘贴活动相册链接",
+      "title": "开始找照片",
+      "subtitle": "上传自拍，2分钟找出所有有你的照片",
+      "uploadLabel": "上传一张自拍照",
+      "uploadHint": "清晰的正面照效果最好，支持 JPG/PNG 格式",
+      "urlLabel": "粘贴活动相册链接（可选）",
       "urlPlaceholder": "https://example.com/album",
-      "startButton": "开始搜索",
-      "resetButton": "重置表单",
-      "resultsTitle": "匹配到的照片",
-      "resultsEmpty": "运行流程后会在这里展示匹配结果。",
-      "resultsHelp": "点击每张照片下方的按钮逐一下载原图。",
+      "startButton": "开始查找",
+      "resetButton": "重新开始",
+      "resultsTitle": "找到的照片",
+      "resultsEmpty": "上传自拍和相册照片后，点击开始查找按钮",
+      "resultsHelp": "点击照片可以预览，点击下载按钮保存到本地",
       "cardDownloadCta": "下载此照片",
       "messages": {
         "missingFields": "请先上传自拍并选择至少一张相册照片。",
@@ -158,32 +158,32 @@
         "downloadReady": "匹配已完成，可在下方逐张下载。",
         "fileTooLarge": "图片较大也没关系，我们会自动压缩；若失败请稍后重试。"
       },
-      "localToggleLabel": "测试模式：上传本地相册",
-      "localToggleDescription": "关闭即可抓取 Pixcheese 链接，开启则继续使用本地相册测试。",
+      "localToggleLabel": "上传本地相册照片",
+      "localToggleDescription": "也可以粘贴相册链接，我们会自动导入照片",
       "albumUploadCta": "选择相册照片",
-      "albumSelectedLabel": "已准备 {count} 张照片用于检测",
-      "albumClearCta": "清空选择",
-      "urlDisabled": "请输入 Pixcheese 相册链接（https://v.pixcheese.com/s/xxxx），我们会自动导入照片。",
+      "albumSelectedLabel": "已选择 {count} 张照片",
+      "albumClearCta": "清空",
+      "urlDisabled": "暂不支持链接导入，请直接上传相册照片",
       "statuses": {
         "gather": {
-          "title": "爬取活动相册",
-          "description": "抓取所有可访问照片并跳过重复文件。"
+          "title": "准备照片",
+          "description": "正在读取相册照片"
         },
         "detect": {
-          "title": "人脸检测",
-          "description": "调用 Face++ Detect API 获取每张脸的 face_token。"
+          "title": "识别人脸",
+          "description": "分析照片中的人脸特征"
         },
         "faceset": {
-          "title": "构建 FaceSet",
-          "description": "将所有 face_token 写入该活动专属的 FaceSet。"
+          "title": "建立索引",
+          "description": "为快速查找建立索引"
         },
         "search": {
-          "title": "搜索用户自拍",
-          "description": "用自拍的 face_token 在 FaceSet 中对比相似度。"
+          "title": "智能匹配",
+          "description": "查找与你的自拍相似的照片"
         },
         "package": {
-          "title": "打包匹配结果",
-          "description": "把匹配到的原图压缩成可下载的 ZIP。"
+          "title": "完成",
+          "description": "找到所有匹配的照片"
         }
       },
       "mockResults": {

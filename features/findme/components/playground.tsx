@@ -62,7 +62,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [albumFiles, setAlbumFiles] = useState<AlbumFileState[]>([]);
-  const [useLocalAlbum, setUseLocalAlbum] = useState(true);
+  const [useLocalAlbum, setUseLocalAlbum] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [matches, setMatches] = useState<SearchMatch[]>([]);
@@ -350,17 +350,34 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
   return (
     <section
       id="findme-app"
-      className="space-y-10 rounded-[36px] border border-border/80 bg-background/80 p-8 shadow-[0_25px_80px_rgba(15,23,42,0.35)]"
+      className="space-y-12"
     >
-      <div className="space-y-3">
-        <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+      {/* Hero-style Header */}
+      <div className="space-y-6 text-center">
+        <span className="inline-flex items-center justify-center gap-3 rounded-full border border-white/15 bg-white/5 px-6 py-2 text-[11px] uppercase tracking-[0.5em] text-slate-200/80 backdrop-blur">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#19FFC7] shadow-[0_0_12px_rgba(25,255,199,0.9)]" />
           {copy.subtitle}
+        </span>
+        <h2 className="text-4xl font-semibold leading-tight tracking-[0.02em] text-white md:text-5xl">
+          {copy.title}
+        </h2>
+        <p className="mx-auto max-w-2xl text-base text-white/70 md:text-lg">
+          只需两步：上传你的自拍 + 上传活动相册，AI 自动帮你找出所有有你的照片
         </p>
-        <h2 className="text-3xl font-semibold">{copy.title}</h2>
       </div>
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="flex flex-col gap-6">
-          <label className="cursor-pointer rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-6 transition hover:border-primary">
+
+      {/* Main Content - Single Column */}
+      <div className="mx-auto max-w-4xl space-y-10">
+        {/* Step 1: Upload Selfie */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#19FFC7]/20 text-sm font-bold text-[#19FFC7]">
+              1
+            </span>
+            <h3 className="text-xl font-semibold text-white">{copy.uploadLabel}</h3>
+          </div>
+          {/* Selfie Upload - Dark Glass Style */}
+          <label className="block cursor-pointer rounded-[32px] border border-[#19FFC7]/30 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-8 backdrop-blur transition hover:border-[#19FFC7]/50 hover:shadow-[0_0_40px_rgba(25,255,199,0.15)]">
             <input
               ref={selfieInputRef}
               type="file"
@@ -368,64 +385,84 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
               className="sr-only"
               onChange={handleSelfieChange}
             />
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-semibold text-primary">
-                  {copy.uploadLabel}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {copy.uploadHint}
-                </p>
-              </div>
-              {selfiePreview ? (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <img
-                    src={selfiePreview}
-                    alt="Selfie preview"
-                    className="h-32 w-32 rounded-2xl object-cover"
-                  />
-                  <p className="text-xs text-muted-foreground">
+            {selfiePreview ? (
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                <img
+                  src={selfiePreview}
+                  alt="Selfie preview"
+                  className="h-32 w-32 rounded-2xl border border-white/10 object-cover shadow-lg"
+                />
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm font-medium text-white">✓ 自拍照已上传</p>
+                  <p className="text-xs text-white/50">
                     JPG / PNG · 自动压缩
                   </p>
                 </div>
-              ) : (
-                <div className="rounded-2xl border border-border/70 bg-background/70 p-4 text-xs text-muted-foreground">
-                  JPG / PNG · 自动压缩
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-4 py-8 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#19FFC7]/10 border border-[#19FFC7]/20">
+                  <svg className="h-8 w-8 text-[#19FFC7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                 </div>
-              )}
-            </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-white">点击上传自拍照</p>
+                  <p className="text-xs text-white/50">
+                    {copy.uploadHint}
+                  </p>
+                  <p className="text-xs text-white/40">
+                    支持 JPG / PNG 格式
+                  </p>
+                </div>
+              </div>
+            )}
           </label>
-          <div className="rounded-3xl border border-border/70 bg-muted/20 p-6 space-y-6">
+        </div>
+
+        {/* Step 2: Album URL */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#00AEEF]/20 text-sm font-bold text-[#00AEEF]">
+              2
+            </span>
+            <h3 className="text-xl font-semibold text-white">{copy.urlLabel}</h3>
+          </div>
+          <div className="rounded-[32px] border border-white/12 bg-[rgba(6,9,15,0.92)] p-8 backdrop-blur-2xl space-y-6">
+            {/* URL Input - Main Feature */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-foreground">
-                {copy.urlLabel}
-              </label>
               <Input
                 value={eventUrl}
                 onChange={(event) => setEventUrl(event.target.value)}
                 placeholder={copy.urlPlaceholder}
+                className="bg-white/5 border-white/20 text-white placeholder:text-white/40 h-12 text-base"
+                disabled={useLocalAlbum}
               />
+              <p className="text-xs text-white/50">
+                粘贴活动相册链接，AI 将自动从中找出有你的照片
+              </p>
             </div>
-            <div className="rounded-2xl border border-dashed border-border/60 bg-background/70 p-4 space-y-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold">{copy.localToggleLabel}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {copy.localToggleDescription}
-                  </p>
-                </div>
-                <Switch
-                  checked={useLocalAlbum}
-                  onCheckedChange={(value) => setUseLocalAlbum(Boolean(value))}
-                />
-              </div>
-              {useLocalAlbum ? (
-                <div className="space-y-3">
+
+            {/* Local Upload - Secondary Option */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setUseLocalAlbum(!useLocalAlbum)}
+                className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+              >
+                <span>{useLocalAlbum ? '↑' : '→'}</span>
+                <span className="underline decoration-dotted underline-offset-4">
+                  或者，从本地上传相册照片
+                </span>
+              </button>
+
+              {useLocalAlbum && (
+                <div className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full sm:w-auto justify-center"
+                      className="w-full sm:w-auto justify-center text-sm font-medium"
                       onClick={() => albumInputRef.current?.click()}
                     >
                       {copy.albumUploadCta}
@@ -443,33 +480,35 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                         type="button"
                         variant="simple"
                         size="sm"
-                        className="text-xs sm:ml-auto sm:w-auto w-full"
+                        className="text-xs sm:ml-auto sm:w-auto w-full text-white/60 hover:text-white"
                         onClick={clearAlbumFiles}
                       >
                         {copy.albumClearCta}
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+
+                  <p className="text-xs text-white/60">
                     {albumCountLabel}
                   </p>
+
                   {albumFiles.length > 0 && (
                     <div className="grid gap-3 sm:grid-cols-2">
                       {albumFiles.map((file, index) => (
                         <div
                           key={file.id}
-                          className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/80 p-3"
+                          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 transition hover:border-white/20"
                         >
                           <img
                             src={file.preview}
                             alt={file.file.name || `album-${index + 1}`}
-                            className="h-14 w-14 rounded-xl object-cover"
+                            className="h-14 w-14 flex-shrink-0 rounded-xl border border-white/10 object-cover"
                           />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium truncate">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">
                               {file.file.name || `album-${index + 1}`}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-white/50">
                               {Math.round(file.file.size / 1024)} KB
                             </p>
                           </div>
@@ -477,6 +516,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                             size="sm"
                             variant="simple"
                             onClick={() => removeAlbumFile(file.id)}
+                            className="flex-shrink-0 text-white/60 hover:text-white"
                           >
                             ✕
                           </Button>
@@ -485,78 +525,118 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                     </div>
                   )}
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">{copy.urlDisabled}</p>
               )}
             </div>
           </div>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Button
-              onClick={startProcessing}
-              className="w-full sm:w-auto"
-              disabled={isProcessing}
-            >
-              {isProcessing ? `${copy.startButton}…` : copy.startButton}
-            </Button>
-            <Button
-              variant="outline"
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col items-center gap-4 pt-4">
+          <button
+            onClick={startProcessing}
+            disabled={isProcessing}
+            className="w-full max-w-md rounded-full bg-white px-12 py-4 text-base font-bold text-[#05101A] shadow-[0_15px_50px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(255,255,255,0.35)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            {isProcessing ? `处理中...` : copy.startButton}
+          </button>
+          {!isProcessing && selfieFile && (
+            <button
               onClick={handleReset}
-              className="w-full sm:w-auto"
-              disabled={isProcessing}
+              className="text-sm text-white/60 hover:text-white transition-colors"
             >
               {copy.resetButton}
-            </Button>
-          </div>
-          {statusMessage && (
-            <p className="text-sm text-muted-foreground">{statusMessage}</p>
+            </button>
           )}
-          {error && <p className="text-sm text-red-400">{error}</p>}
         </div>
-        <div className="rounded-3xl border border-border/70 bg-background/70 p-6">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
+
+        {/* Status Messages */}
+        {statusMessage && (
+          <div className="text-center rounded-2xl border border-[#19FFC7]/20 bg-[#19FFC7]/10 p-4">
+            <p className="text-sm font-medium text-[#19FFC7]">{statusMessage}</p>
+          </div>
+        )}
+        {error && (
+          <div className="rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-center">
+            <p className="text-sm font-medium text-red-400">{error}</p>
+          </div>
+        )}
+
+        {/* Progress Section - Only show when processing */}
+        {isProcessing && (
+          <div className="rounded-[32px] border border-white/12 bg-[rgba(6,9,15,0.92)] p-8 backdrop-blur-2xl">
+          {/* Gradient Progress Bar */}
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-[#19FFC7] via-[#00AEEF] to-[#9B4FFF] transition-all duration-500"
               style={{ width: `${progress * 100}%` }}
             />
           </div>
-          <ul className="mt-6 space-y-4">
+          <ul className="mt-8 space-y-4">
             {copy.statuses.map((status, index) => {
               const isCurrent = index + 1 === activeStep;
               const isDone = index + 1 <= activeStep && activeStep > 0;
-              const stateClass = isDone
-                ? "border-emerald-400/50 bg-emerald-400/10"
-                : isCurrent
-                ? "border-primary/70 bg-primary/10"
-                : "border-border/70 bg-background/60";
+
+              const glowColor = index % 3 === 0
+                ? "rgba(25,255,199,0.3)"
+                : index % 3 === 1
+                ? "rgba(0,174,239,0.3)"
+                : "rgba(155,79,255,0.3)";
 
               return (
                 <li
                   key={status.title}
                   className={cn(
-                    "rounded-2xl border p-4",
-                    stateClass,
-                    isCurrent && "shadow-[0_0_35px_rgba(59,130,246,0.25)]"
+                    "relative overflow-hidden rounded-2xl border p-4 transition-all",
+                    isDone
+                      ? "border-[#19FFC7]/40 bg-[#19FFC7]/10"
+                      : isCurrent
+                      ? "border-[#00AEEF]/50 bg-[#00AEEF]/10"
+                      : "border-white/10 bg-white/5",
+                    isCurrent && "shadow-[0_0_35px_rgba(0,174,239,0.3)]"
                   )}
                 >
-                  <p className="text-sm font-semibold">{status.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {status.description}
-                  </p>
+                  {isCurrent && (
+                    <div
+                      className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-[60px]"
+                      style={{ background: glowColor }}
+                    />
+                  )}
+                  <div className="relative flex items-center gap-3">
+                    <span className={cn(
+                      "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                      isDone
+                        ? "bg-[#19FFC7]/20 text-[#19FFC7]"
+                        : isCurrent
+                        ? "bg-[#00AEEF]/20 text-[#00AEEF]"
+                        : "bg-white/10 text-white/50"
+                    )}>
+                      {isDone ? "✓" : index + 1}
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">{status.title}</p>
+                      <p className="text-xs text-white/60">
+                        {status.description}
+                      </p>
+                    </div>
+                  </div>
                 </li>
               );
             })}
           </ul>
-        </div>
-      </div>
-      <div className="space-y-4 rounded-3xl border border-border/70 bg-background/90 p-6">
-        <div>
-          <p className="text-lg font-semibold">{copy.resultsTitle}</p>
-          <p className="text-sm text-muted-foreground">
-            {matches.length ? copy.resultsHelp : copy.resultsEmpty}
+          </div>
+        )}
+
+        {/* Results Section - Only show when有结果 */}
+        {matches.length > 0 && (
+      <div className="space-y-8 rounded-[40px] border border-white/12 bg-[rgba(6,9,15,0.92)] p-10 backdrop-blur-2xl">
+        <div className="text-center space-y-2">
+          <p className="text-3xl font-semibold text-white">{copy.resultsTitle}</p>
+          <p className="text-sm text-white/60">
+            找到 {matches.length} 张照片，{copy.resultsHelp}
           </p>
         </div>
-        {matches.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {matches.length > 0 && (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {matches.map((match, index) => {
               const album = albumFiles[match.photoIndex];
               const previewSrc = match.previewUrl ?? album?.preview;
@@ -565,40 +645,40 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
               return (
                 <article
                   key={`${match.photoIndex}-${match.confidence}`}
-                  className="rounded-3xl border border-border/70 bg-muted/10 p-4 flex flex-col gap-3"
+                  className="group relative overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 flex flex-col gap-3 transition hover:border-white/20 hover:-translate-y-1"
                 >
                   {hasPreview ? (
                     <button
                       type="button"
                       onClick={() => handleOpenPreview(index)}
-                      className="group block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#19FFC7] focus-visible:ring-offset-2 focus-visible:ring-offset-[#05060a]"
                       aria-label={`预览 ${match.filename}`}
                     >
-                      <div className="aspect-square w-full overflow-hidden rounded-2xl bg-muted">
+                      <div className="aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5">
                         <img
                           src={previewSrc ?? ""}
                           alt={album?.file.name || match.filename}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                       </div>
                     </button>
                   ) : (
-                    <div className="aspect-square w-full rounded-2xl bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                    <div className="aspect-square w-full rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-xs text-white/50">
                       {match.filename}
                     </div>
                   )}
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold truncate">
+                    <p className="text-sm font-semibold text-white truncate">
                       {match.filename}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-white/60">
                       {match.tokenCount} face hits · {match.confidence.toFixed(2)}%
                     </p>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mt-auto w-full"
+                    className="mt-auto w-full rounded-full border-white/20 bg-transparent text-white hover:border-[#19FFC7]/50 hover:bg-[#19FFC7]/10 hover:text-[#19FFC7]"
                     onClick={() => handleDownloadSingle(match)}
                     disabled={!canDownload}
                   >
@@ -608,10 +688,12 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
               );
             })}
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">{copy.resultsEmpty}</p>
+        )}
+        </div>
         )}
       </div>
+
+      {/* Preview Modal */}
       {previewIndex !== null && currentPreview && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"

@@ -1,4 +1,4 @@
-import { Background } from "@/components/background";
+import { FindMeLandingBackground } from "@/components/findme-landing-background";
 import { Container } from "@/components/container";
 import { FindMePlayground } from "@/features/findme/components/playground";
 import type { Locale } from "@/i18n.config";
@@ -82,12 +82,10 @@ export default async function FindMeAppPage({
   };
 
   return (
-    <div className="relative">
-      <div className="absolute inset-0 h-full w-full overflow-hidden">
-        <Background />
-      </div>
-      <div className="relative pb-16">
-        <Container className="pt-24 pb-10">
+    <div className="relative min-h-screen overflow-hidden bg-[#05060a] text-white">
+      <FindMeLandingBackground />
+      <div className="relative pb-20">
+        <Container className="pt-32 pb-10">
           <FindMePlayground copy={playgroundCopy} />
         </Container>
       </div>
