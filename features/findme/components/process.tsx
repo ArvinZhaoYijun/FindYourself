@@ -16,7 +16,7 @@ export function FindMeProcess({ copy }: { copy: ProcessCopy }) {
       className="space-y-10 rounded-[44px] border border-white/10 bg-[rgba(5,7,12,0.85)] px-6 py-12 text-white backdrop-blur-2xl md:px-12"
     >
       <div className="space-y-4 text-center">
-        <p className="text-xs uppercase tracking-[0.5em] text-[#7F8CA8]">
+        <p className="text-sm uppercase tracking-[0.5em] text-[#7F8CA8]">
           {copy.subtitle}
         </p>
         <h2 className="text-3xl font-semibold text-white md:text-4xl">
@@ -31,7 +31,7 @@ export function FindMeProcess({ copy }: { copy: ProcessCopy }) {
           >
             <div className="absolute inset-px rounded-[28px] border border-white/5" />
             <div className="relative space-y-4">
-              <div className="flex items-center gap-4 text-xs uppercase tracking-[0.35em] text-[#9FB2D7]">
+              <div className="flex items-center gap-4 text-xl uppercase tracking-[0.25em] text-[#9FB2D7]">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/5 text-base font-semibold text-white">
                   {index + 1}
                 </span>

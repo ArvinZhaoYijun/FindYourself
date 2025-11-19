@@ -535,9 +535,10 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
           <button
             onClick={startProcessing}
             disabled={isProcessing}
-            className="w-full max-w-md rounded-full bg-white px-12 py-4 text-base font-bold text-[#05101A] shadow-[0_15px_50px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(255,255,255,0.35)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-full max-w-md rounded-full bg-white px-12 py-4 text-lg font-semibold shadow-[0_15px_50px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(255,255,255,0.35)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{ color: '#000000' }}
           >
-            {isProcessing ? `处理中...` : copy.startButton}
+            {isProcessing ? "处理中..." : (copy.startButton || "开始查找")}
           </button>
           {!isProcessing && selfieFile && (
             <button

@@ -75,7 +75,7 @@
       "eyebrow": "FINDME • SMART EVENT PHOTO FINDER",
       "title": "Stop scrolling. Let us find every photo of you.",
       "description": "Attended a wedding, graduation, or festival? Thousands of photos, only dozens are yours. Upload one selfie, get all your moments in 2 minutes.",
-      "primaryCta": "Find my event photos",
+      "primaryCta": "Find me",
       "scenarios": {
         "wedding": {
           "icon": "💒",
