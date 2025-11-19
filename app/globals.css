@@ -107,4 +107,16 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  .animate-hero-scan {
+    animation: hero-scan 1.4s linear infinite;
+  }
+}
+
+@keyframes hero-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }

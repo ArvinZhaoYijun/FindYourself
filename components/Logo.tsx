@@ -6,7 +6,7 @@ export const Logo = () => {
   return (
     <Link
       href="/"
-      className="font-normal flex space-x-2 items-center text-sm mr-4 text-foreground px-2 py-1 relative z-20"
+      className="font-normal flex space-x-2 items-center text-sm mr-4 px-2 py-1 relative z-20 text-white transition-opacity hover:opacity-80"
     >
       <svg
         width="24"
@@ -14,46 +14,39 @@ export const Logo = () => {
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6"
+        className="h-5 w-5"
       >
-        {/* 教堂主体 */}
-        <path
-          d="M12 2L7 7V21H17V7L12 2Z"
-          fill="currentColor"
-          opacity="0.9"
+        {/* 搜索放大镜圆圈 */}
+        <circle
+          cx="10"
+          cy="10"
+          r="7"
+          stroke="currentColor"
+          strokeWidth="2"
+          fill="none"
         />
-        {/* 教堂尖顶十字架 */}
+        {/* 搜索放大镜手柄 */}
         <path
-          d="M12 0V2M11 1H13"
+          d="M15 15L21 21"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        {/* 内部人像轮廓 */}
+        <circle
+          cx="10"
+          cy="9"
+          r="2"
+          fill="currentColor"
+        />
+        <path
+          d="M6.5 14C6.5 12.5 8 11.5 10 11.5C12 11.5 13.5 12.5 13.5 14"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
         />
-        {/* 教堂大门 */}
-        <path
-          d="M10.5 21V16C10.5 15.2 11.2 14.5 12 14.5C12.8 14.5 13.5 15.2 13.5 16V21"
-          stroke="hsl(var(--background))"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* 教堂窗户 */}
-        <circle
-          cx="12"
-          cy="10"
-          r="1.5"
-          stroke="hsl(var(--background))"
-          strokeWidth="1"
-          fill="none"
-        />
-        {/* 侧翼 */}
-        <path
-          d="M5 10L5 21H7V7M19 10L19 21H17V7"
-          fill="currentColor"
-          opacity="0.6"
-        />
       </svg>
-      <span className="font-medium text-foreground">Sistine AI</span>
+      <span className="font-semibold text-white">FindMe</span>
     </Link>
   );
 };

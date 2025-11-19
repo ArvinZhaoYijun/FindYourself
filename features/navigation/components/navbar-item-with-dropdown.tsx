@@ -62,7 +62,7 @@ export function NavBarItemWithDropdown({
     return (
       <Link
         href={href}
-        className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-hover transition-colors"
+        className="px-4 py-2 rounded-xl text-sm font-medium text-white/70 hover:bg-white/10 transition-colors"
       >
         {children}
       </Link>
@@ -77,10 +77,10 @@ export function NavBarItemWithDropdown({
     >
       <button
         className={cn(
-          "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors",
+          "px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-1 transition-colors",
           isOpen
-            ? "bg-accent text-foreground"
-            : "text-muted-foreground hover:bg-hover"
+            ? "bg-white/15 text-white"
+            : "text-white/70 hover:bg-white/10"
         )}
       >
         {children}
@@ -100,7 +100,7 @@ export function NavBarItemWithDropdown({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 mt-1 w-48 bg-popover rounded-lg shadow-navbar border border-border overflow-hidden z-50"
+            className="absolute left-0 mt-1 w-56 rounded-2xl border border-white/10 bg-[rgba(5,7,12,0.95)] text-white shadow-[0_25px_80px_rgba(5,7,12,0.7)] overflow-hidden z-50"
           >
             <div className="py-2">
               {subItems.map((subItem) => {
@@ -110,11 +110,11 @@ export function NavBarItemWithDropdown({
                   <Link
                     key={subItem.key}
                     href={subItem.href}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:bg-hover transition-colors"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:bg-white/10 transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     {IconComponent && (
-                      <IconComponent className="w-4 h-4 text-muted-foreground" />
+                      <IconComponent className="w-4 h-4 text-white/70" />
                     )}
                     <span>{t(subItem.key)}</span>
                   </Link>

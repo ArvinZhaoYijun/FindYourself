@@ -1,9 +1,9 @@
 {
   "common": {
     "brand": {
-      "name": "SISTINE",
-      "tagline": "Sistine AI & Sistine Labs",
-      "copyright": "版权所有 © 2025 Sistine AI & Sistine Labs",
+      "name": "FindMe",
+      "tagline": "FindMe - 活动照片智能查找",
+      "copyright": "版权所有 © 2025 FindMe",
       "allRightsReserved": "保留所有权利"
     },
     "actions": {
@@ -72,32 +72,25 @@
   },
   "findme": {
     "hero": {
-      "eyebrow": "FindMe · 活动照片 AI 检索",
-      "title": "一张自拍，找出活动里所有出现你的照片",
-      "description": "上传自拍和公开相册链接，FindMe 利用 Face++ 为每张脸生成 face_token，并在几分钟内返还所有出现你的画面。",
-      "primaryCta": "立即找我照片",
-      "secondaryCta": "查看流程",
-      "panel": {
-        "title": "MVP 工作流",
-        "description": "下方交互已完全就绪，目前使用 mock 数据模拟，下一步即可接入 Face++ 与爬虫服务。",
-        "items": {
-          "selfie": "自拍 → 统一光线并裁切关键区域",
-          "album": "活动链接 → 并行爬取并去重所有图片",
-          "zip": "匹配结果 → 一键打包 ZIP 下载"
-        }
-      },
-      "metrics": {
-        "photos": {
-          "value": "12000+",
-          "label": "每分钟可处理照片"
+      "eyebrow": "FindMe · 活动照片智能查找",
+      "title": "别再一张张翻了,让我帮你找到所有照片",
+      "description": "上千张活动照片,哪些有你?一张自拍,2分钟AI找出所有属于你的瞬间。",
+      "primaryCta": "找到我的照片",
+      "scenarios": {
+        "wedding": {
+          "icon": "💒",
+          "label": "婚礼宴会",
+          "description": "新人、伴娘、宾客照片快速分发"
         },
-        "precision": {
-          "value": "97.5%",
-          "label": "Face++ 相似度基线"
+        "graduation": {
+          "icon": "🎓",
+          "label": "毕业典礼",
+          "description": "千人毕业照中找到自己和家人"
         },
-        "time": {
-          "value": "4 小时 → 2 分钟",
-          "label": "人工筛查时间节省"
+        "festival": {
+          "icon": "🎪",
+          "label": "音乐节/活动",
+          "description": "摄影师拍了上万张,属于你的一键打包"
         }
       }
     },
@@ -123,24 +116,24 @@
       }
     },
     "process": {
-      "title": "FindMe 第一个 MVP 已交付的能力",
-      "subtitle": "先实现关键承诺，后续接入 Face++ 与爬虫时无需重做界面。",
+      "title": "简单四步,找到所有照片",
+      "subtitle": "不需要注册,不需要下载 App,打开就用",
       "steps": {
         "selfie": {
-          "title": "上传自拍",
-          "description": "支持 JPG/PNG（≤10MB），会先统一光线再生成 face_token。"
+          "title": "上传一张自拍",
+          "description": "随便一张清晰的自拍照就行,我们会自动识别你的面部特征。"
         },
         "album": {
-          "title": "粘贴活动链接",
-          "description": "仅支持公开相册，爬虫会抓取且排队所有可访问图片。"
+          "title": "粘贴相册链接或上传照片",
+          "description": "支持主流相册网站链接,也可以直接上传活动照片文件夹。"
         },
         "match": {
-          "title": "AI 匹配预览",
-          "description": "使用 mock 数据展示未来的匹配数量、相似度和缩略图。"
+          "title": "AI 智能匹配",
+          "description": "通常 2 分钟内完成,即使上千张照片也能快速找到所有有你的照片。"
         },
         "download": {
-          "title": "打包下载",
-          "description": "将匹配到的原图压缩为 ZIP，一键交付或通过邮件分享。"
+          "title": "一键打包下载",
+          "description": "所有匹配的照片打包成 ZIP,点击下载就能保存到本地。"
         }
       }
     },

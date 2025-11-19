@@ -17,7 +17,7 @@ export function NavBar() {
         ease: [0.6, 0.05, 0.1, 0.9],
         duration: 0.8,
       }}
-      className="fixed top-4 z-50 w-[calc(100%-2rem)] max-w-[calc(100vw-2rem)] lg:max-w-7xl mx-auto inset-x-0"
+      className="fixed top-0 inset-x-0 z-50"
     >
       <div className="hidden lg:block w-full">
         <DesktopNavbar />

@@ -12,26 +12,53 @@ export type ValueCopy = {
 
 export function FindMeValueGrid({ copy }: { copy: ValueCopy }) {
   return (
-    <section className="space-y-8 rounded-[32px] border border-border/70 bg-background/80 p-8 backdrop-blur">
-      <div className="space-y-2 text-center">
-        <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+    <section className="space-y-10 rounded-[40px] border border-white/10 bg-[rgba(6,9,15,0.92)] px-6 py-10 text-white backdrop-blur-2xl md:px-12">
+      <div className="space-y-3 text-center">
+        <p className="text-xs uppercase tracking-[0.45em] text-[#7F8CA8]">
           {copy.subtitle}
         </p>
-        <h2 className="text-3xl font-semibold">{copy.title}</h2>
+        <h2 className="text-3xl font-semibold text-white md:text-4xl">
+          {copy.title}
+        </h2>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
-        {copy.items.map((item) => (
+        {copy.items.map((item, index) => (
           <article
             key={item.title}
-            className="rounded-3xl border border-border/70 bg-gradient-to-b from-background/90 to-background/30 p-6 shadow-[0_12px_45px_rgba(15,23,42,0.15)]"
+            className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-6 text-left text-white transition hover:-translate-y-1 hover:border-[#19FFC7]/40"
           >
-            <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+            <div className="absolute inset-px rounded-[24px] border border-white/5" />
+            <span className="relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] uppercase tracking-[0.4em] text-[#9FB2D7]">
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{
+                  background:
+                    index % 3 === 0
+                      ? "#19FFC7"
+                      : index % 3 === 1
+                      ? "#00AEEF"
+                      : "#9B4FFF",
+                }}
+              />
               {item.tag}
             </span>
-            <h3 className="mt-4 text-xl font-semibold">{item.title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h3 className="relative mt-5 text-2xl font-semibold">
+              {item.title}
+            </h3>
+            <p className="relative mt-3 text-sm text-[#C7D6F3]">
               {item.description}
             </p>
+            <div
+              className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-[60px]"
+              style={{
+                background:
+                  index % 3 === 0
+                    ? "rgba(25,255,199,0.25)"
+                    : index % 3 === 1
+                    ? "rgba(0,174,239,0.25)"
+                    : "rgba(155,79,255,0.25)",
+              }}
+            />
           </article>
         ))}
       </div>

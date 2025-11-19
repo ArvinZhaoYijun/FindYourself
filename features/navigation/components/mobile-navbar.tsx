@@ -48,31 +48,30 @@ export const MobileNavbar = () => {
   return (
     <div
       className={cn(
-        "flex justify-between bg-background items-center w-full rounded-full px-4 py-2 transition duration-200",
-        showBackground &&
-          "bg-secondary shadow-[0px_-2px_0px_0px_hsl(var(--muted)),0px_2px_0px_0px_hsl(var(--muted))]"
+        "flex w-full items-center justify-between rounded-full border border-white/10 bg-[rgba(5,7,12,0.85)] px-4 py-2 text-white transition duration-200",
+        showBackground && "bg-[rgba(5,7,12,0.95)] shadow-[0_20px_80px_rgba(5,7,12,0.6)]"
       )}
     >
       <Logo />
       <IoIosMenu
-        className="text-foreground h-6 w-6"
+        className="h-6 w-6 cursor-pointer text-white"
         onClick={() => setOpen(!open)}
       />
       {open && (
-        <div className="fixed inset-0 bg-background z-50 flex flex-col items-start justify-start pt-4 text-xl text-muted-foreground transition duration-200">
-          <div className="flex items-center justify-between w-full px-5 pb-4 border-b border-border">
+        <div className="fixed inset-0 z-50 flex flex-col items-start justify-start bg-[#05060a] pt-4 text-xl text-white transition duration-200">
+          <div className="flex w-full items-center justify-between border-b border-white/10 px-5 pb-4">
             <Logo />
             <div className="flex items-center gap-2">
               <ModeToggle />
               <button
                 onClick={() => setOpen(!open)}
-                className="p-1.5 rounded-lg hover:bg-accent transition-colors"
+                className="rounded-lg p-1.5 transition-colors hover:bg-white/10"
               >
-                <IoIosClose className="h-7 w-7 text-foreground" />
+                <IoIosClose className="h-7 w-7 text-white" />
               </button>
             </div>
           </div>
-          <div className="flex flex-col items-start justify-start gap-3 px-6 py-6 w-full overflow-y-auto flex-1">
+          <div className="flex w-full flex-1 flex-col items-start justify-start gap-3 overflow-y-auto px-6 py-6">
             {marketingNavigationKeys.map((navItem) => (
               <div key={navItem.key} className="w-full">
                 {navItem.subItems ? (
@@ -85,18 +84,18 @@ export const MobileNavbar = () => {
                             : [...prev, navItem.key]
                         );
                       }}
-                      className="flex items-center justify-between w-full gap-3 group py-2"
+                      className="group flex w-full items-center justify-between gap-3 py-2"
                     >
-                      <span className="text-xl text-foreground font-semibold">
+                      <span className="text-xl font-semibold text-white">
                         {t(navItem.key)}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground font-medium px-2 py-0.5 bg-muted rounded-full">
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/70">
                           {navItem.subItems.length}
                         </span>
                         <ChevronRight
                           className={cn(
-                            "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                            "h-5 w-5 text-white/60 transition-transform duration-200",
                             expandedItems.includes(navItem.key) && "rotate-90"
                           )}
                         />
@@ -111,7 +110,7 @@ export const MobileNavbar = () => {
                           transition={{ duration: 0.25, ease: "easeOut" }}
                           className="overflow-hidden"
                         >
-                          <div className="ml-1 mt-2 space-y-0.5 bg-secondary rounded-2xl p-2 border border-border">
+                          <div className="ml-1 mt-2 space-y-0.5 rounded-2xl border border-white/10 bg-white/5 p-2">
                             {navItem.subItems.map((subItem, index) => {
                               const IconComponent = subItem.icon ? iconMap[subItem.icon as keyof typeof iconMap] : null;
                               return (
@@ -124,14 +123,14 @@ export const MobileNavbar = () => {
                                   <Link
                                     href={`/${locale}${subItem.href}`}
                                     onClick={() => setOpen(false)}
-                                    className="flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-accent transition-all duration-150 active:scale-[0.98]"
+                                    className="flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-150 hover:bg-white/10 active:scale-[0.98]"
                                   >
                                     {IconComponent && (
-                                      <div className="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-muted rounded-lg shadow-sm">
-                                        <IconComponent className="w-4.5 h-4.5 text-foreground" />
+                                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 shadow-sm">
+                                        <IconComponent className="h-4.5 w-4.5 text-white" />
                                       </div>
                                     )}
-                                    <span className="text-[15px] font-medium text-foreground">
+                                    <span className="text-[15px] font-medium text-white">
                                       {t(subItem.key)}
                                     </span>
                                   </Link>
@@ -147,9 +146,9 @@ export const MobileNavbar = () => {
                   <Link
                     href={`/${locale}${navItem.href}`}
                     onClick={() => setOpen(false)}
-                    className="relative block w-full py-2 hover:opacity-70 transition-opacity"
+                    className="relative block w-full py-2 transition-opacity hover:opacity-70"
                   >
-                    <span className="block text-xl text-foreground font-semibold">
+                    <span className="block text-xl font-semibold text-white">
                       {t(navItem.key)}
                     </span>
                   </Link>
@@ -157,19 +156,19 @@ export const MobileNavbar = () => {
               </div>
             ))}
           </div>
-          <div className="flex flex-col w-full items-start gap-4 px-6 py-5 border-t border-border bg-secondary">
+          <div className="flex w-full flex-col items-start gap-4 border-t border-white/10 bg-white/5 px-6 py-5 backdrop-blur-lg">
             <div className="w-full">
               <LanguageSwitcher />
             </div>
             {session.data?.user ? (
               <>
-                <div className="flex flex-col gap-2 w-full">
-                  <div className="pb-3 mb-2 border-b border-border">
-                    <p className="text-[15px] font-semibold text-foreground">
+                <div className="flex w-full flex-col gap-2">
+                  <div className="mb-2 border-b border-white/10 pb-3">
+                    <p className="text-[15px] font-semibold text-white">
                       {session.data.user.name || session.data.user.email}
                     </p>
                     {session.data.user.name && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="mt-1 text-sm text-white/70">
                         {session.data.user.email}
                       </p>
                     )}
@@ -177,14 +176,14 @@ export const MobileNavbar = () => {
                   <Link
                     href={`/${locale}/dashboard`}
                     onClick={() => setOpen(false)}
-                    className="text-[15px] font-medium text-muted-foreground py-2 hover:text-foreground transition-colors"
+                    className="py-2 text-[15px] font-medium text-white/70 transition-colors hover:text-white"
                   >
                     {t('dashboard')}
                   </Link>
                   <Link
                     href={`/${locale}/profile`}
                     onClick={() => setOpen(false)}
-                    className="text-[15px] font-medium text-muted-foreground py-2 hover:text-foreground transition-colors"
+                    className="py-2 text-[15px] font-medium text-white/70 transition-colors hover:text-white"
                   >
                     {t('profile')}
                   </Link>
@@ -195,14 +194,14 @@ export const MobileNavbar = () => {
                       router.push("/");
                       router.refresh();
                     }}
-                    className="text-[15px] font-medium text-destructive py-2 text-left hover:opacity-80 transition-opacity"
+                    className="py-2 text-left text-[15px] font-medium text-red-400 transition-opacity hover:opacity-80"
                   >
                     {tCommon('signOut')}
                   </button>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col gap-2.5 w-full">
+              <div className="flex w-full flex-col gap-2.5">
                 <Button
                   as={Link}
                   href={`/${locale}/signup`}
@@ -216,7 +215,7 @@ export const MobileNavbar = () => {
                   as={Link}
                   href={`/${locale}/login`}
                   onClick={() => setOpen(false)}
-                  className="w-full justify-center"
+                  className="w-full justify-center text-white"
                 >
                   {tCommon('signIn')}
                 </Button>

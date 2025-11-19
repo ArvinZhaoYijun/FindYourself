@@ -1,9 +1,9 @@
 {
   "common": {
     "brand": {
-      "name": "SISTINE",
-      "tagline": "Sistine AI & Sistine Labs",
-      "copyright": "Copyright © 2025 Sistine AI & Sistine Labs",
+      "name": "FindMe",
+      "tagline": "FindMe - Smart Event Photo Finder",
+      "copyright": "Copyright © 2025 FindMe",
       "allRightsReserved": "All rights reserved"
     },
     "actions": {
@@ -72,32 +72,25 @@
   },
   "findme": {
     "hero": {
-      "eyebrow": "FINDME • AI PHOTO RETRIEVAL",
-      "title": "Locate yourself inside thousands of event photos with one selfie.",
-      "description": "FindMe ingests a single selfie and any public gallery URL, fingerprints every face with Face++ tokens, and hands back every frame where you appear.",
-      "primaryCta": "Find my photos",
-      "secondaryCta": "View workflow",
-      "panel": {
-        "title": "MVP workflow",
-        "description": "The interface below mirrors the production handoff. APIs are mocked today and will connect to Face++ and the crawler next.",
-        "items": {
-          "selfie": "Selfie → normalize lighting & crop",
-          "album": "Album URL → crawl + deduplicate assets",
-          "zip": "Match set → stream ZIP download"
-        }
-      },
-      "metrics": {
-        "photos": {
-          "value": "12k+",
-          "label": "photos triaged per minute"
+      "eyebrow": "FINDME • SMART EVENT PHOTO FINDER",
+      "title": "Stop scrolling. Let us find every photo of you.",
+      "description": "Attended a wedding, graduation, or festival? Thousands of photos, only dozens are yours. Upload one selfie, get all your moments in 2 minutes.",
+      "primaryCta": "Find my event photos",
+      "scenarios": {
+        "wedding": {
+          "icon": "💒",
+          "label": "Weddings",
+          "description": "Quickly share photos with couples, bridesmaids & guests"
         },
-        "precision": {
-          "value": "97.5%",
-          "label": "Face++ similarity baseline"
+        "graduation": {
+          "icon": "🎓",
+          "label": "Graduations",
+          "description": "Find yourself and family among thousands"
         },
-        "time": {
-          "value": "4h → 2m",
-          "label": "manual review saved"
+        "festival": {
+          "icon": "🎪",
+          "label": "Festivals & Events",
+          "description": "Photographer shot 10k+ photos? Get yours in one click"
         }
       }
     },
@@ -123,24 +116,24 @@
       }
     },
     "process": {
-      "title": "What ships in the first FindMe MVP",
-      "subtitle": "We focus on the critical promises now and swap the mock layer for Face++ once back-end modules land.",
+      "title": "Three simple steps to find all your photos",
+      "subtitle": "No signup, no app download, just open and use",
       "steps": {
         "selfie": {
-          "title": "Upload selfie",
-          "description": "Accepts JPG/PNG up to 10MB and standardizes lighting before generating a face_token."
+          "title": "Upload one selfie",
+          "description": "Any clear selfie works—we'll automatically detect your facial features."
         },
         "album": {
-          "title": "Paste album URL",
-          "description": "Public galleries only. The crawler queues every reachable image for processing."
+          "title": "Paste album link or upload photos",
+          "description": "Supports major album platforms, or directly upload your event photo folders."
         },
         "match": {
-          "title": "AI match preview",
-          "description": "Mock search shows how we will surface hit counts, similarity, and thumbnails."
+          "title": "AI smart matching",
+          "description": "Usually done in 2 minutes—even with thousands of photos, we'll quickly find all photos of you."
         },
         "download": {
-          "title": "One-click ZIP",
-          "description": "Package matched assets and ship a download link or email handoff."
+          "title": "One-click download",
+          "description": "All matched photos packed in a ZIP file. Click download to save locally."
         }
       }
     },

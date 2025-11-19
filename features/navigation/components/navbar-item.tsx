@@ -26,9 +26,9 @@ export function NavBarItem({
     <LocaleLink
       href={href}
       className={cn(
-        "flex items-center justify-center text-sm leading-[110%] px-4 py-2 rounded-md hover:bg-hover text-muted-foreground",
+        "flex items-center justify-center text-sm leading-[110%] px-4 py-2 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition-colors",
         (active || pathname?.includes(href)) &&
-          "bg-accent text-foreground",
+          "bg-white/15 text-white",
         className
       )}
       target={target}

@@ -53,65 +53,54 @@ export const Footer = () => {
     },
   ];
   return (
-    <div className="relative">
-      <div className="border-t border-border px-8 pt-20 pb-32 relative bg-background">
-        <div className="max-w-7xl mx-auto">
-          {/* Footer Links Section */}
-          <div className="text-sm text-muted-foreground flex sm:flex-row flex-col justify-between items-start">
-            <div>
-              <div className="mr-4 md:flex mb-4">
-                <Logo />
-              </div>
-              <div>{t('common.brand.copyright')}</div>
-              <div className="mt-2">{t('common.brand.allRightsReserved')}</div>
-              {/* Newsletter Inline */}
-              <div className="mt-6">
-                <NewsletterInline />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-10 items-start mt-10 md:mt-0">
-              <div className="flex justify-center space-y-4 flex-col mt-4">
-                {links.map((link) => (
-                  <LocaleLink
-                    key={link.name}
-                    className="transition-colors hover:text-foreground text-muted-foreground text-xs sm:text-sm"
-                    href={link.href}
-                  >
-                    {link.name}
-                  </LocaleLink>
-                ))}
-              </div>
-              <div className="flex justify-center space-y-4 flex-col mt-4">
-                {legal.map((link) => (
-                  <LocaleLink
-                    key={link.name}
-                    className="transition-colors hover:text-foreground text-muted-foreground text-xs sm:text-sm"
-                    href={link.href}
-                  >
-                    {link.name}
-                  </LocaleLink>
-                ))}
-              </div>
-              <div className="flex justify-center space-y-4 flex-col mt-4">
-                {socials.map((link) => (
-                  <a
-                    key={link.name}
-                    className="transition-colors hover:text-foreground text-muted-foreground text-xs sm:text-sm"
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {link.name}
-                  </a>
-                ))}
-              </div>
-            </div>
+    <footer className="border-t border-white/10 bg-[rgba(5,7,12,0.95)] px-6 py-16 text-white">
+      <div className="mx-auto flex max-w-7xl flex-col gap-12 md:flex-row md:justify-between">
+        <div className="space-y-4 text-sm text-white/70">
+          <Logo />
+          <div>{t("common.brand.copyright")}</div>
+          <div>{t("common.brand.allRightsReserved")}</div>
+          <div className="pt-4">
+            <NewsletterInline />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-8 text-sm text-white/60 md:grid-cols-3">
+          <div className="space-y-3">
+            {links.map((link) => (
+              <LocaleLink
+                key={link.name}
+                className="transition-colors hover:text-white"
+                href={link.href}
+              >
+                {link.name}
+              </LocaleLink>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {legal.map((link) => (
+              <LocaleLink
+                key={link.name}
+                className="transition-colors hover:text-white"
+                href={link.href}
+              >
+                {link.name}
+              </LocaleLink>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {socials.map((link) => (
+              <a
+                key={link.name}
+                className="transition-colors hover:text-white"
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {link.name}
+              </a>
+            ))}
           </div>
         </div>
       </div>
-      <p className="text-center text-5xl md:text-9xl lg:text-[18rem] font-bold bg-clip-text text-transparent bg-gradient-to-b from-muted to-border inset-x-0">
-        SISTINE
-      </p>
-    </div>
+    </footer>
   );
 };
