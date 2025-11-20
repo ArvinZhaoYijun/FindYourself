@@ -226,8 +226,10 @@ export const findmeSearchSession = pgTable("findme_search_session", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
   eventUrl: text("event_url"),
+  shareKey: text("share_key"),
   outerId: text("outer_id"),
   status: varchar("status", { length: 32 }).notNull().default("processing"), // pending, processing, completed, failed
+  cacheStatus: varchar("cache_status", { length: 16 }).notNull().default("none"), // none, building, ready, reuse
   selfieStorageUrl: text("selfie_storage_url"),
   albumCount: integer("album_count").default(0).notNull(),
   matchCount: integer("match_count").default(0).notNull(),

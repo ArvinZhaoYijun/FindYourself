@@ -62,6 +62,9 @@ const config: Config = {
           "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
         marquee: "marquee var(--marquee-duration) linear infinite",
         "fade-in": "fade-in 0.5s linear forwards",
+        spotlight: "spotlight 2s ease .75s 1 forwards",
+        scan: "scan 3s linear infinite",
+        gradient: "gradient 3s ease infinite",
       },
       boxShadow: {
         derek: `0px 0px 0px 1px hsl(var(--shadow-color) / 0.06),
@@ -90,6 +93,28 @@ const config: Config = {
           },
           to: {
             opacity: "1",
+          },
+        },
+        spotlight: {
+          "0%": {
+            opacity: "0",
+            transform: "translate(-72%, -62%) scale(0.5)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translate(-50%,-40%) scale(1)",
+          },
+        },
+        scan: {
+          "0%, 100%": { top: "0%" },
+          "50%": { top: "100%" },
+        },
+        gradient: {
+          "0%, 100%": {
+            backgroundPosition: "0% 50%",
+          },
+          "50%": {
+            backgroundPosition: "100% 50%",
           },
         },
       },

@@ -36,17 +36,17 @@ export default async function Home({
     primaryCta: t("hero.primaryCta"),
     scenarios: [
       {
-        icon: t("hero.scenarios.wedding.icon"),
+        iconType: "wedding" as const,
         label: t("hero.scenarios.wedding.label"),
         description: t("hero.scenarios.wedding.description"),
       },
       {
-        icon: t("hero.scenarios.graduation.icon"),
+        iconType: "graduation" as const,
         label: t("hero.scenarios.graduation.label"),
         description: t("hero.scenarios.graduation.description"),
       },
       {
-        icon: t("hero.scenarios.festival.icon"),
+        iconType: "festival" as const,
         label: t("hero.scenarios.festival.label"),
         description: t("hero.scenarios.festival.description"),
       },
@@ -80,7 +80,7 @@ export default async function Home({
     <div className="relative min-h-screen overflow-hidden bg-[#05060a] text-white">
       <FindMeLandingBackground />
       <div className="relative space-y-20 pb-20">
-        <Container className="pt-32">
+        <Container className="pt-24">
           <FindMeHero
             copy={heroCopy}
             primaryHref={`/${locale}/findme`}

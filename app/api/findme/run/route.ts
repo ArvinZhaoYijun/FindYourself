@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FacePPClient } from "@/lib/facepp";
 import { randomUUID } from "crypto";
+import { eq } from "drizzle-orm";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -8,14 +9,89 @@ import {
   findmeSearchMatch,
   findmeSearchSession,
 } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { prepareFileForFacePP } from "@/lib/findme/photo-compression";
+import { FacePPClient, type FacePPDetectResponse } from "@/lib/facepp";
 import {
   fetchPixcheeseAlbumFiles,
   PixcheeseError,
   type PixcheeseAlbumFetchResult,
+  extractPixcheeseShareKey,
 } from "@/lib/pixcheese/server";
+import {
+  getCachedAlbumEntries,
+  getFindmeCacheContext,
+  type CachedAlbumEntry,
+} from "@/features/findme/server/cache-service";
+import {
+  prepareFileForFacePP,
+  type PreparedImageForFacePP,
+} from "@/lib/findme/photo-compression";
+import { mapWithConcurrency } from "@/lib/utils/concurrency";
+import { SlidingWindowRateLimiter } from "@/lib/utils/rate-limiter";
+
 const ADD_FACE_CHUNK_SIZE = 5;
+const SEARCH_RETURN_COUNT = 5;
+const FACESET_TOKEN_LIMIT = Math.max(
+  50,
+  Number(process.env.FINDME_FACESET_TOKEN_LIMIT ?? 4000)
+);
+const DETECT_CONCURRENCY = Math.max(
+  1,
+  Number(process.env.FINDME_DETECT_CONCURRENCY ?? 4)
+);
+const DETECT_RPS = Math.max(
+  1,
+  Number(process.env.FINDME_DETECT_REQUESTS_PER_SECOND ?? 4)
+);
+const DETECT_MAX_RETRIES = Math.max(
+  1,
+  Number(process.env.FINDME_DETECT_MAX_RETRIES ?? 3)
+);
+const DETECT_RETRY_DELAY_MS = Math.max(
+  250,
+  Number(process.env.FINDME_DETECT_RETRY_DELAY_MS ?? 1000)
+);
+const FACEPP_CONCURRENCY_ERROR = "CONCURRENCY_LIMIT_EXCEEDED";
+
+type AlbumSource = {
+  id: string;
+  file: File;
+  filename: string;
+  contentType: string;
+  previewUrl?: string;
+  sourceUrl?: string;
+};
+
+type AlbumFileInfo = {
+  filename: string;
+  contentType: string;
+  previewUrl?: string;
+  sourceUrl?: string;
+};
+
+type FaceSetInfo = {
+  outerId: string;
+  tokenStartIndex: number;
+  tokenCount: number;
+};
+
+type SessionCacheMetadata = {
+  cache?: {
+    facesets?: FaceSetInfo[];
+    faceTokenCount?: number;
+    preparedAt?: string;
+    shareKey?: string;
+    version?: number;
+  };
+  remoteSource?: Record<string, unknown>;
+};
+
+type DetectionResult = {
+  photoIndex: number;
+  original: AlbumSource;
+  prepared: PreparedImageForFacePP;
+  faceTokens: string[];
+  faceCount: number;
+};
 
 type MatchSummary = {
   photoIndex: number;
@@ -26,12 +102,15 @@ type MatchSummary = {
   sourceUrl?: string;
 };
 
+type CacheStatus = "none" | "building" | "ready" | "reuse";
+
 function errorResponse(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
 export async function POST(req: NextRequest) {
   let sessionRecordId: string | null = null;
+  let sessionCacheStatus: CacheStatus = "none";
 
   try {
     const formData = await req.formData();
@@ -48,14 +127,34 @@ export async function POST(req: NextRequest) {
       return errorResponse("请上传自拍照片");
     }
 
-    type AlbumSource = {
-      id: string;
-      file: File;
-      filename: string;
-      contentType: string;
-      previewUrl?: string;
-      sourceUrl?: string;
-    };
+    let shareKey =
+      !useLocalAlbum && eventUrl
+        ? extractPixcheeseShareKey(eventUrl)
+        : null;
+
+    let cachedAlbums: CachedAlbumEntry[] = [];
+    let cacheContext = shareKey ? await getFindmeCacheContext(shareKey) : null;
+    const readyCacheSession = cacheContext?.readySession;
+    const readySessionMetadata =
+      readyCacheSession?.metadata
+        ? parseSessionMetadata(readyCacheSession.metadata)
+        : null;
+
+    if (!useLocalAlbum && readyCacheSession) {
+      cachedAlbums = await getCachedAlbumEntries(readyCacheSession.id);
+      if (!cachedAlbums.length) {
+        cachedAlbums = [];
+      }
+    }
+
+    let shouldUseCache =
+      !useLocalAlbum &&
+      !!readyCacheSession &&
+      cachedAlbums.length > 0;
+    let shouldBuildCache =
+      !useLocalAlbum &&
+      !shouldUseCache &&
+      (cacheContext?.sessionCount ?? 0) >= 1;
 
     let remoteAlbum: PixcheeseAlbumFetchResult | null = null;
     let albumSources: AlbumSource[] = [];
@@ -71,7 +170,7 @@ export async function POST(req: NextRequest) {
       if (!albumSources.length) {
         return errorResponse("请至少上传一张相册照片");
       }
-    } else {
+    } else if (!shouldUseCache) {
       if (!eventUrl) {
         return errorResponse("请输入 Pixcheese 相册链接");
       }
@@ -86,6 +185,14 @@ export async function POST(req: NextRequest) {
         return errorResponse(message);
       }
 
+      shareKey = remoteAlbum.shareKey;
+      if (shareKey) {
+        cacheContext = await getFindmeCacheContext(shareKey);
+        shouldBuildCache =
+          !shouldUseCache &&
+          (cacheContext?.sessionCount ?? 0) >= 1;
+      }
+
       albumSources = remoteAlbum.photos.map((photo, index) => ({
         id: photo.id || `remote-${index}`,
         file: photo.file,
@@ -96,98 +203,190 @@ export async function POST(req: NextRequest) {
       }));
     }
 
-    if (!albumSources.length) {
+    const albumCount = shouldUseCache
+      ? cachedAlbums.length
+      : albumSources.length;
+
+    if (!albumCount) {
       return errorResponse("未获取到任何相册照片");
     }
 
-    const client = new FacePPClient();
+    sessionCacheStatus = shouldUseCache
+      ? "reuse"
+      : shouldBuildCache
+        ? "building"
+        : "none";
 
-    const albumFiles: {
-      filename: string;
-      contentType: string;
-      previewUrl?: string;
-      sourceUrl?: string;
-    }[] = [];
-    const faceToPhotoIndex = new Map<string, number>();
-    const allFaceTokens: string[] = [];
+    const sessionMetadata: Record<string, unknown> = {
+      useLocalAlbum,
+      clientEventUrl: eventUrl,
+      selfieName: selfie.name,
+    };
+
+    if (remoteAlbum) {
+      sessionMetadata.remoteSource = {
+        type: "pixcheese",
+        shareKey: remoteAlbum.shareKey,
+        projectId: remoteAlbum.projectId,
+        photoCount: remoteAlbum.photos.length,
+      };
+    } else if (shouldUseCache && readySessionMetadata?.remoteSource) {
+      sessionMetadata.remoteSource = readySessionMetadata.remoteSource;
+    }
+
     sessionRecordId = randomUUID();
-
-    const preparedSelfie = await prepareFileForFacePP(selfie);
-    const preparedAlbums = await Promise.all(
-      albumSources.map(async (item) => ({
-        original: item,
-        prepared: await prepareFileForFacePP(item.file),
-      }))
-    );
-
     await db.insert(findmeSearchSession).values({
       id: sessionRecordId,
       userId: userId ?? undefined,
       eventUrl,
+      shareKey: shareKey ?? undefined,
       status: "processing",
-      albumCount: albumSources.length,
-      metadata: JSON.stringify({
-        useLocalAlbum,
-        clientEventUrl: eventUrl,
-        selfieName: selfie.name,
-        remoteSource: remoteAlbum
-          ? {
-              type: "pixcheese",
-              shareKey: remoteAlbum.shareKey,
-              projectId: remoteAlbum.projectId,
-              photoCount: remoteAlbum.photos.length,
-            }
-          : undefined,
-      }),
+      cacheStatus: sessionCacheStatus,
+      albumCount,
+      metadata: JSON.stringify(sessionMetadata),
     });
 
-    for (let i = 0; i < albumSources.length; i++) {
-      const { original, prepared } = preparedAlbums[i];
-      const filename = original.filename || `album-${i + 1}.jpg`;
-      const contentType = prepared.file.type || original.contentType || "image/jpeg";
-      const detectResponse = await client.detectByFile(prepared.file);
-      const faceTokens = detectResponse.faces.map((face) => face.face_token);
+    const client = new FacePPClient();
+    const albumFiles: AlbumFileInfo[] = Array.from({ length: albumCount });
+    const faceToPhotoIndex = new Map<string, number>();
+    const allFaceTokens: string[] = [];
+    const preparedSelfie = await prepareFileForFacePP(selfie);
 
-      detectResponse.faces.forEach((face) => {
-        faceToPhotoIndex.set(face.face_token, i);
-        allFaceTokens.push(face.face_token);
-      });
+    const detectRateLimiter = new SlidingWindowRateLimiter(DETECT_RPS, 1000);
 
-      albumFiles.push({
-        filename,
-        contentType,
-        previewUrl: original.previewUrl,
-        sourceUrl: original.sourceUrl,
-      });
+    if (shouldUseCache && cachedAlbums.length) {
+      cachedAlbums.forEach((album) => {
+        const metadata = album.metadata;
+        const faceTokens = metadata.faceTokens ?? [];
 
-      await db.insert(findmeSearchAlbum).values({
-        id: randomUUID(),
-        sessionId: sessionRecordId,
-        photoIndex: i,
-        filename,
-        contentType,
-        sizeBytes: Math.round(prepared.sizeCompressedKB * 1024),
-        faceCount: detectResponse.faces.length,
-        metadata: JSON.stringify({
-          faceTokens,
-          compression: {
-            status: prepared.status,
-            usedOriginal: prepared.usedOriginal,
-            sizeKB: prepared.sizeCompressedKB,
-          },
-          source: original.sourceUrl
-            ? {
-                type: "pixcheese",
-                fileUrl: original.sourceUrl,
-                previewUrl: original.previewUrl,
-              }
-            : undefined,
-        }),
+        faceTokens.forEach((token) => {
+          faceToPhotoIndex.set(token, album.photoIndex);
+        });
+        allFaceTokens.push(...faceTokens);
+
+        albumFiles[album.photoIndex] = {
+          filename: album.filename,
+          contentType: album.contentType,
+          previewUrl: metadata.source?.previewUrl,
+          sourceUrl: metadata.source?.fileUrl,
+        };
       });
+    } else {
+      const preparedAlbums = await Promise.all(
+        albumSources.map(async (item) => ({
+          original: item,
+          prepared: await prepareFileForFacePP(item.file),
+        }))
+      );
+
+      const detectionResults = await mapWithConcurrency(
+        preparedAlbums,
+        DETECT_CONCURRENCY,
+        async (entry, index) => {
+          const detectResponse = await detectWithRateLimit(
+            client,
+            entry.prepared.file,
+            detectRateLimiter
+          );
+          const faceTokens = detectResponse.faces.map(
+            (face) => face.face_token
+          );
+          return {
+            photoIndex: index,
+            original: entry.original,
+            prepared: entry.prepared,
+            faceTokens,
+            faceCount: detectResponse.faces.length,
+          } satisfies DetectionResult;
+        }
+      );
+
+      for (const result of detectionResults) {
+        result.faceTokens.forEach((token) => {
+          faceToPhotoIndex.set(token, result.photoIndex);
+        });
+        allFaceTokens.push(...result.faceTokens);
+
+        albumFiles[result.photoIndex] = {
+          filename:
+            result.original.filename || `album-${result.photoIndex + 1}.jpg`,
+          contentType:
+            result.prepared.file.type || result.original.contentType || "image/jpeg",
+          previewUrl: result.original.previewUrl,
+          sourceUrl: result.original.sourceUrl,
+        };
+
+        await db.insert(findmeSearchAlbum).values({
+          id: randomUUID(),
+          sessionId: sessionRecordId,
+          photoIndex: result.photoIndex,
+          filename: albumFiles[result.photoIndex]!.filename,
+          contentType: albumFiles[result.photoIndex]!.contentType,
+          sizeBytes: Math.round(result.prepared.sizeCompressedKB * 1024),
+          faceCount: result.faceCount,
+          metadata: JSON.stringify({
+            faceTokens: result.faceTokens,
+            compression: {
+              status: result.prepared.status,
+              usedOriginal: result.prepared.usedOriginal,
+              sizeKB: result.prepared.sizeCompressedKB,
+            },
+            source: result.original.sourceUrl
+              ? {
+                  type: "pixcheese",
+                  fileUrl: result.original.sourceUrl,
+                  previewUrl: result.original.previewUrl,
+                }
+              : undefined,
+          }),
+        });
+      }
     }
 
     if (!allFaceTokens.length) {
       return errorResponse("相册中没有检测到任何人脸，请使用更清晰的照片");
+    }
+
+    let faceSets: FaceSetInfo[] = [];
+
+    if (shouldUseCache && readyCacheSession) {
+      const readyMetadata = readySessionMetadata ?? {};
+      faceSets = readyMetadata.cache?.facesets ?? [];
+      if (!faceSets.length) {
+        faceSets = await createFaceSets(client, allFaceTokens);
+        if (faceSets.length) {
+          const updatedMetadata = {
+            ...readyMetadata,
+            cache: {
+              ...(readyMetadata.cache ?? {}),
+              facesets: faceSets,
+              faceTokenCount:
+                readyMetadata.cache?.faceTokenCount ?? allFaceTokens.length,
+              preparedAt: new Date().toISOString(),
+              shareKey: shareKey ?? readyMetadata.cache?.shareKey,
+            },
+          };
+
+          await db
+            .update(findmeSearchSession)
+            .set({
+              cacheStatus: "ready",
+              outerId: faceSets[0]?.outerId,
+              metadata: JSON.stringify(updatedMetadata),
+            })
+            .where(eq(findmeSearchSession.id, readyCacheSession.id));
+        }
+      }
+      sessionMetadata.cacheReuse = {
+        sourceSessionId: readyCacheSession.id,
+        shareKey,
+      };
+    } else {
+      faceSets = await createFaceSets(client, allFaceTokens);
+    }
+
+    if (!faceSets.length) {
+      return errorResponse("未能创建人脸集合，请稍后再试");
     }
 
     const selfieDetect = await client.detectByFile(preparedSelfie.file);
@@ -200,54 +399,47 @@ export async function POST(req: NextRequest) {
       return errorResponse("未能解析自拍的人脸信息");
     }
 
-    const outerId = `findme_${randomUUID()}`;
+    const searchResponses = await Promise.all(
+      faceSets.map((set) =>
+        client.searchByFaceToken(set.outerId, selfieToken, SEARCH_RETURN_COUNT)
+      )
+    );
 
-    await client.createFaceSet(outerId, allFaceTokens[0]!);
-
-    const remainingTokens = allFaceTokens.slice(1);
-    for (let i = 0; i < remainingTokens.length; i += ADD_FACE_CHUNK_SIZE) {
-      const chunk = remainingTokens.slice(i, i + ADD_FACE_CHUNK_SIZE);
-      if (chunk.length) {
-        await client.addFaces(outerId, chunk);
-      }
-    }
-
-    const searchResponse = await client.searchByFaceToken(outerId, selfieToken, 5);
+    const referenceThresholds = searchResponses[0]?.thresholds;
+    const confidenceThreshold = referenceThresholds?.["1e-4"] ?? 70;
     const photoMatches = new Map<number, MatchSummary>();
 
-    // 使用 Face++ 推荐的万分之一误报率阈值
-    const confidenceThreshold = searchResponse.thresholds?.["1e-4"] ?? 70;
-
-    for (const result of searchResponse.results ?? []) {
-      // 过滤低置信度结果
-      if (result.confidence < confidenceThreshold) {
-        continue;
-      }
-
-      const photoIndex = faceToPhotoIndex.get(result.face_token);
-      if (photoIndex === undefined) {
-        continue;
-      }
-
-      const albumMeta = albumFiles[photoIndex];
-      const existing = photoMatches.get(photoIndex);
-      if (!existing) {
-        photoMatches.set(photoIndex, {
-          photoIndex,
-          filename: albumMeta?.filename ?? `match-${photoIndex + 1}.jpg`,
-          confidence: result.confidence,
-          tokenCount: 1,
-          previewUrl: albumMeta?.previewUrl,
-          sourceUrl: albumMeta?.sourceUrl,
-        });
-      } else {
-        existing.confidence = Math.max(existing.confidence, result.confidence);
-        existing.tokenCount += 1;
-        if (!existing.previewUrl && albumMeta?.previewUrl) {
-          existing.previewUrl = albumMeta.previewUrl;
+    for (const response of searchResponses) {
+      for (const result of response.results ?? []) {
+        if (result.confidence < confidenceThreshold) {
+          continue;
         }
-        if (!existing.sourceUrl && albumMeta?.sourceUrl) {
-          existing.sourceUrl = albumMeta.sourceUrl;
+
+        const photoIndex = faceToPhotoIndex.get(result.face_token);
+        if (photoIndex === undefined) {
+          continue;
+        }
+
+        const albumMeta = albumFiles[photoIndex];
+        const existing = photoMatches.get(photoIndex);
+        if (!existing) {
+          photoMatches.set(photoIndex, {
+            photoIndex,
+            filename: albumMeta?.filename ?? `match-${photoIndex + 1}.jpg`,
+            confidence: result.confidence,
+            tokenCount: 1,
+            previewUrl: albumMeta?.previewUrl,
+            sourceUrl: albumMeta?.sourceUrl,
+          });
+        } else {
+          existing.confidence = Math.max(existing.confidence, result.confidence);
+          existing.tokenCount += 1;
+          if (!existing.previewUrl && albumMeta?.previewUrl) {
+            existing.previewUrl = albumMeta.previewUrl;
+          }
+          if (!existing.sourceUrl && albumMeta?.sourceUrl) {
+            existing.sourceUrl = albumMeta.sourceUrl;
+          }
         }
       }
     }
@@ -270,21 +462,35 @@ export async function POST(req: NextRequest) {
       await db.insert(findmeSearchMatch).values(matchRecords);
     }
 
+    if (shouldBuildCache) {
+      sessionCacheStatus = "ready";
+      sessionMetadata.cache = {
+        shareKey,
+        version: 1,
+        faceTokenCount: allFaceTokens.length,
+        preparedAt: new Date().toISOString(),
+        facesets: faceSets,
+      };
+    }
+
     await db
       .update(findmeSearchSession)
       .set({
         status: "completed",
-        outerId,
+        outerId: faceSets[0]?.outerId,
         matchCount: matches.length,
+        cacheStatus: sessionCacheStatus,
+        metadata: JSON.stringify(sessionMetadata),
         updatedAt: new Date(),
       })
       .where(eq(findmeSearchSession.id, sessionRecordId));
 
     return NextResponse.json({
       sessionId: sessionRecordId,
-      outerId,
+      outerId: faceSets[0]?.outerId,
       matches,
       eventUrl,
+      cacheStatus: sessionCacheStatus,
     });
   } catch (error) {
     console.error("[findme][run] error", error);
@@ -293,6 +499,7 @@ export async function POST(req: NextRequest) {
         .update(findmeSearchSession)
         .set({
           status: "failed",
+          cacheStatus: sessionCacheStatus === "building" ? "none" : sessionCacheStatus,
           error: error instanceof Error ? error.message : "Unknown error",
           updatedAt: new Date(),
         })
@@ -303,4 +510,116 @@ export async function POST(req: NextRequest) {
       500
     );
   }
+}
+
+async function detectWithRateLimit(
+  client: FacePPClient,
+  file: File,
+  rateLimiter: SlidingWindowRateLimiter,
+  attempt = 0
+): Promise<FacePPDetectResponse> {
+  await rateLimiter.acquire();
+  try {
+    return await client.detectByFile(file);
+  } catch (error) {
+    if (isConcurrencyLimitError(error) && attempt + 1 < DETECT_MAX_RETRIES) {
+      const backoffMs = DETECT_RETRY_DELAY_MS * (attempt + 1);
+      await sleep(backoffMs);
+      return detectWithRateLimit(client, file, rateLimiter, attempt + 1);
+    }
+    throw error;
+  }
+}
+
+function isConcurrencyLimitError(error: unknown): boolean {
+  if (!error) {
+    return false;
+  }
+
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : null;
+
+  if (!message) {
+    return false;
+  }
+
+  if (message.includes(FACEPP_CONCURRENCY_ERROR)) {
+    return true;
+  }
+
+  try {
+    const parsed = JSON.parse(message) as { error_message?: string };
+    return parsed?.error_message === FACEPP_CONCURRENCY_ERROR;
+  } catch {
+    return false;
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
+}
+
+function parseSessionMetadata(raw: string | null): SessionCacheMetadata {
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(raw) as SessionCacheMetadata;
+  } catch {
+    return {};
+  }
+}
+
+function chunkFaceTokens(tokens: string[]): Array<{
+  tokenStartIndex: number;
+  tokens: string[];
+}> {
+  const chunks: Array<{ tokenStartIndex: number; tokens: string[] }> = [];
+
+  for (let start = 0; start < tokens.length; start += FACESET_TOKEN_LIMIT) {
+    chunks.push({
+      tokenStartIndex: start,
+      tokens: tokens.slice(start, start + FACESET_TOKEN_LIMIT),
+    });
+  }
+
+  return chunks;
+}
+
+async function createFaceSets(
+  client: FacePPClient,
+  tokens: string[]
+): Promise<FaceSetInfo[]> {
+  if (!tokens.length) {
+    return [];
+  }
+
+  const chunks = chunkFaceTokens(tokens);
+  const faceSets = await Promise.all(
+    chunks.map(async ({ tokenStartIndex, tokens: chunkTokens }) => {
+      const outerId = `findme_${randomUUID()}`;
+      await client.createFaceSet(outerId, chunkTokens[0]!);
+
+      const remaining = chunkTokens.slice(1);
+      for (let i = 0; i < remaining.length; i += ADD_FACE_CHUNK_SIZE) {
+        const slice = remaining.slice(i, i + ADD_FACE_CHUNK_SIZE);
+        if (slice.length) {
+          await client.addFaces(outerId, slice);
+        }
+      }
+
+      return {
+        outerId,
+        tokenStartIndex,
+        tokenCount: chunkTokens.length,
+      } satisfies FaceSetInfo;
+    })
+  );
+
+  return faceSets;
 }

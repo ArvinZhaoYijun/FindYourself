@@ -367,7 +367,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
       </div>
 
       {/* Main Content - Single Column */}
-      <div className="mx-auto max-w-4xl space-y-10">
+      <div className="mx-auto max-w-4xl space-y-8">
         {/* Step 1: Upload Selfie */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -435,7 +435,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                 value={eventUrl}
                 onChange={(event) => setEventUrl(event.target.value)}
                 placeholder={copy.urlPlaceholder}
-                className="bg-white/5 border-white/20 text-white placeholder:text-white/40 h-12 text-base"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 h-12 text-base disabled:bg-white/5 disabled:text-white/50"
                 disabled={useLocalAlbum}
               />
               <p className="text-xs text-white/50">
@@ -497,7 +497,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                       {albumFiles.map((file, index) => (
                         <div
                           key={file.id}
-                          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 transition hover:border-white/20"
+                          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3 transition hover:border-white/20"
                         >
                           <img
                             src={file.preview}
@@ -516,7 +516,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                             size="sm"
                             variant="simple"
                             onClick={() => removeAlbumFile(file.id)}
-                            className="flex-shrink-0 text-white/60 hover:text-white"
+                            className="flex-shrink-0 text-white/70 hover:text-white"
                           >
                             ✕
                           </Button>
@@ -629,15 +629,15 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
 
         {/* Results Section - Only show when有结果 */}
         {matches.length > 0 && (
-      <div className="space-y-8 rounded-[40px] border border-white/12 bg-[rgba(6,9,15,0.92)] p-10 backdrop-blur-2xl">
-        <div className="text-center space-y-2">
+      <div className="space-y-10 rounded-[40px] border border-white/12 bg-[rgba(6,9,15,0.92)] p-8 md:p-12 backdrop-blur-2xl">
+        <div className="text-center space-y-3">
           <p className="text-3xl font-semibold text-white">{copy.resultsTitle}</p>
-          <p className="text-sm text-white/60">
+          <p className="text-base text-white/60">
             找到 {matches.length} 张照片，{copy.resultsHelp}
           </p>
         </div>
         {matches.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
             {matches.map((match, index) => {
               const album = albumFiles[match.photoIndex];
               const previewSrc = match.previewUrl ?? album?.preview;
@@ -646,7 +646,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
               return (
                 <article
                   key={`${match.photoIndex}-${match.confidence}`}
-                  className="group relative overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 flex flex-col gap-3 transition hover:border-white/20 hover:-translate-y-1"
+                  className="group relative overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-white/5 to-white/[0.02] p-5 flex flex-col gap-5 transition hover:border-white/20 hover:-translate-y-1"
                 >
                   {hasPreview ? (
                     <button
@@ -668,7 +668,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                       {match.filename}
                     </div>
                   )}
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <p className="text-sm font-semibold text-white truncate">
                       {match.filename}
                     </p>
@@ -679,7 +679,7 @@ export function FindMePlayground({ copy }: { copy: PlaygroundCopy }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mt-auto w-full rounded-full border-white/20 bg-transparent text-white hover:border-[#19FFC7]/50 hover:bg-[#19FFC7]/10 hover:text-[#19FFC7]"
+                    className="mt-2 w-full rounded-full border-white/20 bg-transparent text-white hover:border-[#19FFC7]/50 hover:bg-[#19FFC7]/10 hover:text-[#19FFC7] h-11"
                     onClick={() => handleDownloadSingle(match)}
                     disabled={!canDownload}
                   >

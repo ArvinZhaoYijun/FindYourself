@@ -51,7 +51,7 @@ export async function prepareFileForFacePP(file: File): Promise<PreparedImageFor
   try {
     const compression = await compressBuffer({ buffer: sourceBuffer });
     const filename = ensureJpegFilename(file.name);
-    const compressedFile = new File([compression.buffer], filename, { type: "image/jpeg" });
+    const compressedFile = new File([compression.buffer as unknown as BlobPart], filename, { type: "image/jpeg" });
 
     return {
       file: compressedFile,
@@ -101,7 +101,7 @@ async function compressBuffer({
     width: metadata.width ?? maxDimension,
     height: metadata.height ?? maxDimension,
     sizeCompressedKB,
-    status: output.byteLength >= MAX_COMPRESSED_BYTES ? "oversize" : "ok",
+    status: (output.byteLength >= MAX_COMPRESSED_BYTES ? "oversize" : "ok") as PhotoStatus,
   };
 }
 

@@ -58,3 +58,6 @@ Desktop.ini
 
 # scripts
 /scripts/manage-users.ts
+
+# gemini clipboard files
+.gemini-clipboard/

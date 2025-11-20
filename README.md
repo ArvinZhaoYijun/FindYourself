@@ -149,6 +149,7 @@ Open [http://localhost:3000](http://localhost:3000) to see your app!
 - [Database Schema](./docs/database.md)
 - [Deployment Guide](./docs/deployment.md)
 - [AI Assistant Tips](./docs/ai-tips.md)
+- [FindMe Face Search](./docs/findme.md)
 
 ### 🛠 Available Scripts
 
