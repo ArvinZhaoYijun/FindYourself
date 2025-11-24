@@ -23,11 +23,11 @@ export function FindMeProcess({ copy }: { copy: ProcessCopy }) {
     <section
       id="workflow"
       ref={containerRef}
-      className="relative overflow-hidden space-y-10 rounded-[44px] border border-white/10 bg-[rgba(5,7,12,0.85)] px-6 py-12 text-white backdrop-blur-2xl md:px-12 shadow-2xl"
+      className="relative overflow-hidden space-y-10 px-6 py-12 text-white md:px-12"
     >
       {/* Background Grid */}
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -60,7 +60,7 @@ function ProcessCard({ step, index, isInView }: { step: ProcessStep; index: numb
       className="group relative overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-br from-white/5 via-[#070c16]/50 to-[#050812]/80 p-8 hover:border-white/30 hover:bg-white/[0.02] transition-all duration-300"
     >
       <div className="absolute inset-px rounded-[28px] border border-white/5 group-hover:border-white/10 transition-colors" />
-      
+
       {/* Hover Glow Effect */}
       <div
         className="absolute -right-10 -top-10 h-40 w-40 rounded-full blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
@@ -86,7 +86,7 @@ function ProcessCard({ step, index, isInView }: { step: ProcessStep; index: numb
           {step.description}
         </p>
       </div>
-      
+
       {/* Permanent subtle glow */}
       <div
         className="pointer-events-none absolute -right-6 top-6 h-24 w-24 rounded-full blur-[70px] opacity-40"
@@ -95,8 +95,8 @@ function ProcessCard({ step, index, isInView }: { step: ProcessStep; index: numb
             index % 3 === 0
               ? "rgba(25,255,199,0.25)"
               : index % 3 === 1
-              ? "rgba(0,174,239,0.25)"
-              : "rgba(155,79,255,0.25)",
+                ? "rgba(0,174,239,0.25)"
+                : "rgba(155,79,255,0.25)",
         }}
       />
     </motion.div>
